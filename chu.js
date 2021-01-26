@@ -16,14 +16,14 @@ class CardHandlerUnit {
     }
 
     // div IDs for the controls.  All will be prefixed with the contents of prefix
-    static sourceCodeId = 'sourceCode';
+    static sourceCodeId = 'source_code';
     static cvalId = 'cval';
     static cvalbId = 'cvalb';
     static suitId = 'suit';
     static r0Id = 'r0';
     static r1Id = 'r1';
     static r2Id = 'r2';
-    static inputQueueId = 'inputQueue';
+    static inputQueueId = 'input_queue';
     static titleId = 'title';
     static registersId = 'regs';
     static registerMap = [
@@ -33,6 +33,7 @@ class CardHandlerUnit {
         {name: "R0", id: CardHandlerUnit.r0Id},
         {name: "R1", id: CardHandlerUnit.r1Id},
         {name: "R2", id: CardHandlerUnit.r2Id},
+        {name: "INPUT", id: CardHandlerUnit.inputQueueId},
     ];
 
     render(containerId) {
@@ -137,14 +138,14 @@ class CardHandlerUnit {
 var editMode = true;
 var dealerCards = [];
 var playerCards = [];
-var controlCh = new CardHandlerUnit("Control", "control", function(card) {
+var controlCh = new CardHandlerUnit("Control", "control_", function(card) {
     alert("Control unit tried to deal card " + card);
 });
-var ch1 = new CardHandlerUnit("CH1 (Dealer)", "ch1", function(card) {
+var ch1 = new CardHandlerUnit("CH1 (Dealer)", "ch1_", function(card) {
     dealerCards.push(card);
     updateDealtCards();
 });
-var ch2 = new CardHandlerUnit("CH2 (Whale)", "ch2", function(card) {
+var ch2 = new CardHandlerUnit("CH2 (Whale)", "ch2_", function(card) {
     playerCards.push(card);
     updateDealtCards();
 });
@@ -158,8 +159,8 @@ function nextLine() {
 
 function toggleEdit() {
     editMode = !editMode;
-    var editBtn = document.getElementById('editButton');
-    var nextBtn = document.getElementById('nextButton');
+    var editBtn = document.getElementById('edit_button');
+    var nextBtn = document.getElementById('next_button');
     if (editMode) {
         editBtn.innerHTML = 'To Run Mode';
         nextBtn.disabled = true;
@@ -173,14 +174,14 @@ function toggleEdit() {
 }
 
 function updateDealtCards() {
-    document.getElementById('dealerCards').value = dealerCards.join(", ");
-    document.getElementById('playerCards').value = playerCards.join(", ");
+    document.getElementById('dealer_cards').value = dealerCards.join(", ");
+    document.getElementById('player_cards').value = playerCards.join(", ");
 }
 
 function init() {
-    controlCh.render('controlContainer');
-    ch1.render('ch1Container');
-    ch2.render('ch2Container');
+    controlCh.render('control_container');
+    ch1.render('ch1_container');
+    ch2.render('ch2_container');
 }
 
 window.onload = init;
