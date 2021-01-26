@@ -26,6 +26,7 @@ class CardHandlerUnit {
     static inputQueueId = 'input_queue';
     static titleId = 'title';
     static registersId = 'regs';
+    // A list of all the state variables used to generate the UI to display them
     static registerMap = [
         {name: "CVAL", id: CardHandlerUnit.cvalId},
         {name: "CVALB", id: CardHandlerUnit.cvalbId},
@@ -36,6 +37,17 @@ class CardHandlerUnit {
         {name: "INPUT", id: CardHandlerUnit.inputQueueId},
     ];
 
+    /** render draws the UI for this CHU in the provided div name
+    Example of generated HTML:
+        <div id="prefix_title">Name</div>
+        <textarea id="prefix_source_code" rows="10" cols="20"></textarea>
+        <table id="prefix_regs">
+            <tr><td>CVAL</td><td><input readonly="" size="4" id="prefix_cval"></td></tr>
+            <tr><td>CVALB</td><td><input readonly="" size="4" id="prefix_cvalb"></td></tr>
+            <tr><td>SUIT</td><td><input readonly="" size="4" id="prefix_suit"></td></tr>
+            <!-- other state rows continue -->
+        </table>
+    */
     render(containerId) {
         var wrapper = document.getElementById(containerId);
         var title = document.createElement('div');
@@ -63,40 +75,52 @@ class CardHandlerUnit {
             row.appendChild(valueBox);
             regs.appendChild(row);
         }
+        regs.style.visibility = 'collapse';
         wrapper.appendChild(regs);
     }
 
+    /** reset eliminates all state related to stepping through the program, leaving source code as is */
     reset() {
         this.currentLine = 0;
         this.card = "";
         this.reg = [0,0,0]
+        this.resetCursor();
     }
 
     setEditMode(editMode) {
         if (editMode != this.editMode) {
             this.editMode = editMode;
             var sourceCode = document.getElementById(this.prefix + CardHandlerUnit.sourceCodeId)
+            var regs = document.getElementById(this.prefix + CardHandlerUnit.registersId);
             if (this.editMode) {
                 sourceCode.readOnly = false;
-                this.currentLine = 0;
+                regs.style.visibility = 'collapse';
+                this.reset();
                 sourceCode.value = this.inst.join("\n")
                 CardHandlerUnit.scrollToLine(sourceCode, this.currentLine);
             } else {
                 sourceCode.readOnly = true;
+                regs.style.visibility = 'visible';
                 this.inst = sourceCode.value.split("\n")
                 CardHandlerUnit.addPadding(sourceCode, this.currentLine);
             }
         }
     }
 
+    /** nextLine advances the CHU to the next instruction */
     nextLine() {
-        var sourceCode = document.getElementById(this.prefix + CardHandlerUnit.sourceCodeId)
         this.currentLine++;
+        this.resetCursor();
+    }
+
+    resetCursor() {
+        var sourceCode = document.getElementById(this.prefix + CardHandlerUnit.sourceCodeId)
         CardHandlerUnit.removePadding(sourceCode);
         CardHandlerUnit.addPadding(sourceCode, this.currentLine);
         CardHandlerUnit.scrollToLine(sourceCode, this.currentLine);
     }
 
+    /** updateRegisters updates the UI for the state of the CHU */
     updateRegisters() {
         document.getElementById(this.prefix + CardHandlerUnit.cvalId).value = this.cval();
     }
@@ -135,6 +159,8 @@ class CardHandlerUnit {
     }
 }
 
+// Create the initial state.  There are 3 CHUs to display on the screen
+// TODO: Hookup the left/right outputs of each unit
 var editMode = true;
 var dealerCards = [];
 var playerCards = [];
@@ -151,8 +177,12 @@ var ch2 = new CardHandlerUnit("CH2 (Whale)", "ch2_", function(card) {
 });
 var allCh = [controlCh, ch1, ch2];
 
+window.onload = init;
+
 function nextLine() {
     for (var ch of allCh) {
+        // TODO: ch.readStage()
+        // TODO: ch.writeStage()
         ch.nextLine();
     }
 }
@@ -161,15 +191,24 @@ function toggleEdit() {
     editMode = !editMode;
     var editBtn = document.getElementById('edit_button');
     var nextBtn = document.getElementById('next_button');
+    var resetBtn = document.getElementById('reset_button');
     if (editMode) {
         editBtn.innerHTML = 'To Run Mode';
         nextBtn.disabled = true;
+        resetBtn.disabled = true;
     } else {
         editBtn.innerHTML = 'To Edit Mode';
         nextBtn.disabled = false;
+        resetBtn.disabled = false;
     }
     for (var ch of allCh) {
         ch.setEditMode(editMode);
+    }
+}
+
+function resetState() {
+    for (var ch of allCh) {
+        ch.reset();
     }
 }
 
@@ -184,4 +223,4 @@ function init() {
     ch2.render('ch2_container');
 }
 
-window.onload = init;
+
