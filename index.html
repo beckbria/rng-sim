@@ -4,12 +4,59 @@
     <head>
         <meta charset="utf-8">
         <title>Foo</title>
-        <script src="./rng.js"></script>
+        <script src="./chu.js"></script>
     </head>
     <body>
         <button type="button" id="editButton" onclick="toggleEdit()">Run Mode</button>
         <button type="button" id="nextButton" onclick="nextLine()" disabled>Next</button>
         <br>
         <textarea id="pr1" rows="5" cols="20"></textarea>
+        <br><br>
+        <h2>ACD-D Card Dealer</h2>
+        <table>
+            <tr>
+                <td>
+<pre>
+
+
+    
+          +-----------
+          |
+          |
+          |
+          |
+          |
+          |
+          |
+          v</pre></td>
+                <td id="controlContainer"></td>
+                <td><pre>
+
+
+    
+-------------+
+             |
+             |
+             |
+             v</pre></td>
+            </tr>
+            <tr>
+                <td id="ch1Container"></td>
+                <td><pre>
+
+<-------------------->
+
+
+</pre>
+                </td>
+                <td id="ch2Container"></td>
+            </tr>
+        </table>
+        <br>
+        <table>
+            <tr><td>Dealer Cards: </td><td><input id="dealerCards" readonly size="4"></input></td></tr>
+            <tr><td>Player Cards: </td><td><input id="playerCards" readonly size="4"></input></td></tr>
+        </table>
+        <div id="foo"></div>
     </body>
 </html>
