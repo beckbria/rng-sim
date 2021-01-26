@@ -79,7 +79,7 @@ class CardHandlerUnit {
                 sourceCode.readOnly = false;
                 this.currentLine = 0;
                 sourceCode.value = this.inst.join("\n")
-                this.scrollToLine(sourceCode, this.currentLine);
+                CardHandlerUnit.scrollToLine(sourceCode, this.currentLine);
             } else {
                 sourceCode.readOnly = true;
                 this.inst = sourceCode.value.split("\n")
