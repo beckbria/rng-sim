@@ -172,7 +172,6 @@ class CardHandlerUnit {
     /** Parse the raw instruction strings into a structured format - an array of token arrays, where each token array is a single instruction */
     parseInstructions() {
         this.inst = [];
-        this.labels = new Map();
         for (var i = 0; i < this.rawInst.length; i++) {
             let instr = this.parseInst(this.rawInst[i], i);
             if (!instr.valid) {
@@ -181,7 +180,27 @@ class CardHandlerUnit {
             this.inst.push(instr.inst);
         }
 
-        // TODO: Check the labels
+        // Check the labels
+        this.labels = new Map();
+        var labelsLookingForNextInst = [];
+        for (var lineNum = 0; lineNum < this.inst.length; lineNum++) {
+            if (this.inst[lineNum][0] == "LABEL") {
+                labelsLookingForNextInst.push(this.inst[lineNum][1]);
+            } else {
+                for (const label of labelsLookingForNextInst) {
+                    if (this.labels.has(label)) {
+                        this.showError(this.name + ": Duplicate label: " + label + " (Line " + line + ")");
+                        return false;
+                    }
+                    this.labels[label] = lineNum;
+                }
+                labelsLookingForNextInst = [];
+            }
+        }
+        if (labelsLookingForNextInst.length > 0) {
+            this.showError(this.name + ": Labels with no following instruction: " + labelsLookingForNextInst);
+            return false;
+        }
 
         return true;
     }
@@ -225,8 +244,8 @@ class CardHandlerUnit {
             return CardHandlerUnit.INVALID_INSTRUCTION;
         }
 
-        const tooManyError = this.name + ": Too many arguments at line " + lineNum + "(" + line + ")";
-        const tooFewError = this.name + ": Insufficient arguments at line " + lineNum + "(" + line + ")";
+        const tooManyError = this.name + ": Too many arguments at line " + lineNum + " (" + line + ")";
+        const tooFewError = this.name + ": Insufficient arguments at line " + lineNum + " (" + line + ")";
 
         switch (tokens[0]) {
         case "READ":
@@ -245,7 +264,7 @@ class CardHandlerUnit {
                 return CardHandlerUnit.INVALID_INSTRUCTION; 
             }
             if (!CardHandlerUnit.validOutputRegister(tokens[1])) {
-                this.showError(this.name + ": Invalid destination '" + tokens[1] + "' at line " + lineNum + "(" + line + ")");
+                this.showError(this.name + ": Invalid destination '" + tokens[1] + "' at line " + lineNum + " (" + line + ")");
                 return CardHandlerUnit.INVALID_INSTRUCTION; 
             }
             break;
@@ -258,12 +277,12 @@ class CardHandlerUnit {
             }
             for (var i = 1; i <= 2; i++) {
                 if (!CardHandlerUnit.validReadableOrLiteral(tokens[i])) {
-                    this.showError(this.name + ": Invalid value '" + tokens[i] + "' at line " + lineNum + "(" + line + ")");
+                    this.showError(this.name + ": Invalid value '" + tokens[i] + "' at line " + lineNum + " (" + line + ")");
                     return CardHandlerUnit.INVALID_INSTRUCTION; 
                 }
             }
             if (!CardHandlerUnit.validWritableRegister(tokens[3])) {
-                this.showError(this.name + ": Cannot write to register '" + tokens[1] + "' at line " + lineNum + "(" + line + ")");
+                this.showError(this.name + ": Cannot write to register '" + tokens[1] + "' at line " + lineNum + " (" + line + ")");
                 return CardHandlerUnit.INVALID_INSTRUCTION; 
             }
             break;
@@ -274,7 +293,7 @@ class CardHandlerUnit {
                 return CardHandlerUnit.INVALID_INSTRUCTION; 
             }
             if (!CardHandlerUnit.validWritableRegister(tokens[1])) {
-                this.showError(this.name + ": Cannot write to register '" + tokens[1] + "' at line " + lineNum + "(" + line + ")");
+                this.showError(this.name + ": Cannot write to register '" + tokens[1] + "' at line " + lineNum + " (" + line + ")");
                 return CardHandlerUnit.INVALID_INSTRUCTION; 
             }
             break;
@@ -285,7 +304,7 @@ class CardHandlerUnit {
                 return CardHandlerUnit.INVALID_INSTRUCTION; 
             }
             if (!CardHandlerUnit.validLabelName(tokens[1])) {
-                this.showError(this.name + ": Invalid label name '" + tokens[1] + "' at line " + lineNum + "(" + line + ")");
+                this.showError(this.name + ": Invalid label name '" + tokens[1] + "' at line " + lineNum + " (" + line + ")");
                 return CardHandlerUnit.INVALID_INSTRUCTION; 
             }
             break;
@@ -298,11 +317,11 @@ class CardHandlerUnit {
                 return CardHandlerUnit.INVALID_INSTRUCTION; 
             }
             if (!CardHandlerUnit.validReadableRegister(tokens[1])) {
-                this.showError(this.name + ": Cannot read from register '" + tokens[1] + "' at line " + lineNum + "(" + line + ")");
+                this.showError(this.name + ": Cannot read from register '" + tokens[1] + "' at line " + lineNum + " (" + line + ")");
                 return CardHandlerUnit.INVALID_INSTRUCTION; 
             }
             if (!CardHandlerUnit.validLabelName(tokens[2])) {
-                this.showError(this.name + ": Cannot write to register '" + tokens[2] + "' at line " + lineNum + "(" + line + ")");
+                this.showError(this.name + ": Cannot write to register '" + tokens[2] + "' at line " + lineNum + " (" + line + ")");
                 return CardHandlerUnit.INVALID_INSTRUCTION; 
             }
             break;
@@ -310,18 +329,18 @@ class CardHandlerUnit {
         default:
             // This could be a label
             if (tokens.length != 1) {
-                this.showError(this.name + ": Incorrect syntax at line " + lineNum + "(" + line + ")");
+                this.showError(this.name + ": Incorrect syntax at line " + lineNum + " (" + line + ")");
                 return CardHandlerUnit.INVALID_INSTRUCTION; 
             }
             var tok = tokens[0];
             if (tok.substr(tok.length - 1, 1) != ":") {
-                this.showError(this.name + ": Incorrect syntax at line " + lineNum + "(" + line + ")");
+                this.showError(this.name + ": Incorrect syntax at line " + lineNum + " (" + line + ")");
                 return CardHandlerUnit.INVALID_INSTRUCTION; 
             }
             // Trim off the colon
             tok = tok.substr(0, tok.length - 1);
             if (!CardHandlerUnit.validLabelName(tok)) {
-                this.showError(this.name + ": Invalid label name '" + tok + "' at line " + lineNum + "(" + line + ")");
+                this.showError(this.name + ": Invalid label name '" + tok + "' at line " + lineNum + " (" + line + ")");
                 return CardHandlerUnit.INVALID_INSTRUCTION; 
             }
             return CardHandlerUnit.validInstruction(["LABEL", tok]);
