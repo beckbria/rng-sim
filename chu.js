@@ -209,24 +209,24 @@ class CardHandlerUnit {
             break;
 
         case "JMP":
-            this.nextLine = this.labels.get(instr[1]);
+            this.nextLine = this.labels[instr[1]];
             break;
 
         case "JZ":
             if (this.readValue(instr[1]) == 0) {
-                this.nextLine = this.labels.get(instr[1]);
+                this.nextLine = this.labels[instr[1]];
             }
             break;
 
         case "JNZ":
             if (this.readValue(instr[1]) != 0) {
-                this.nextLine = this.labels.get(instr[1]);
+                this.nextLine = this.labels[instr[1]];
             }
             break;
 
         case "JGZ":
             if (this.readValue(instr[1]) >= 0) {
-                this.nextLine = this.labels.get(instr[1]);
+                this.nextLine = this.labels[instr[1]];
             }
             break;
 
