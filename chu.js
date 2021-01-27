@@ -13,6 +13,8 @@ class CardHandlerUnit {
         this.labels = new Map();
         // Program counter tracking what instruction will next be executed.  Indexes into inst
         this.currentLine = 0;
+        // Track the next line to advance to.  Used to allow jumps to specify the destination
+        this.nextLine = 1;
         // Whether this node is currently allowing its source code to be edited
         this.editMode = true;
         // The card currently held by this CHU
@@ -31,9 +33,6 @@ class CardHandlerUnit {
         this.down = null;
         this.left = null;
         this.right = null;
-        // True if this unit is currently blocked waiting for data to read and should not advance
-        // to the next instruction
-        this.blockedOnRead = false;
     }
 
     // div IDs for the controls.  All will be prefixed with the contents of prefix
@@ -111,10 +110,13 @@ class CardHandlerUnit {
     /** reset eliminates all state related to stepping through the program, leaving source code as is */
     reset() {
         this.currentLine = 0;
+        this.nextLine = 1;
         this.card = "";
         this.reg = [0,0,0]
-        this.resetCursor();
         this.inputQueue = [...this.initialInputQueue];
+        this.advanceToNextNonLabel();
+        this.resetCursor();
+        this.updateRegisters();
     }
 
     setEditMode(editMode) {
@@ -158,9 +160,6 @@ class CardHandlerUnit {
      */
     executeStage1() {
         const instr = this.inst[this.currentLine];
-        this.blockedOnRead = false;
-
-
 
         switch (instr[0]) {
         case "LABEL":
@@ -175,10 +174,10 @@ class CardHandlerUnit {
                 return false;
             }
             if (this.inputQueue.length == 0) {
-                this.blockedOnRead = true;
+                this.nextLine = this.currentLine;
                 return true;
             }
-            cardToTake = 0;
+            var cardToTake = 0;
             if (instr[0] == "RRAND") {
                 // Take a random card instead
                 cardToTake = getRandomInt(this.inputQueue.length);
@@ -195,6 +194,44 @@ class CardHandlerUnit {
             this.deal(this.card);
             this.card = "";
             break;
+
+        case "ADD":
+        case "SUB":
+            const first = this.readValue(instr[1]);
+            const second = this.readValue(instr[2]);
+            const result = instr[0] == "ADD" ? first + second : first - second;
+            this.writeValue(instr[3], result);
+            break;
+
+        case "NEG":
+            const inv = 0 - this.readValue(instr[1]);
+            this.writeValue(instr[1], inv);
+            break;
+
+        case "JMP":
+            this.nextLine = this.labels.get(instr[1]);
+            break;
+
+        case "JZ":
+            if (this.readValue(instr[1]) == 0) {
+                this.nextLine = this.labels.get(instr[1]);
+            }
+            break;
+
+        case "JNZ":
+            if (this.readValue(instr[1]) != 0) {
+                this.nextLine = this.labels.get(instr[1]);
+            }
+            break;
+
+        case "JGZ":
+            if (this.readValue(instr[1]) >= 0) {
+                this.nextLine = this.labels.get(instr[1]);
+            }
+            break;
+
+        default:
+            this.showError("INTERNAL ERROR: Unknown command " + instr);
         }
 
         return true;
@@ -275,20 +312,20 @@ class CardHandlerUnit {
     }
 
     /** nextLine advances the CHU to the next instruction */
-    nextLine() {
-        if (!this.blockedOnRead) {
-            this.currentLine++;
-            if (!this.advanceToNextNonLabel()) {
-                return false;
-            }
-            this.resetCursor();
+    advanceToNextLine() {
+        this.currentLine = this.nextLine;
+        this.nextLine = this.currentLine + 1;
+        if (!this.advanceToNextNonLabel()) {
+            return false;
         }
+        this.resetCursor();
         return true;
     }
 
     advanceToNextNonLabel() {
         while (this.currentLine < this.inst.length && this.inst[this.currentLine][0] == "LABEL") {
             this.currentLine++;
+            this.nextLine = this.currentLine + 1;
         }
         if (this.currentLine >= this.inst.length) {
             // We've gone beyond the end of the program
@@ -602,53 +639,14 @@ class CardHandlerUnit {
     }
 }
 
-fullDeck = [
-    "AS", "2S", "3S", "4S", "5S", "6S", "7S", "8S", "9S", "TS", "JS", "QS", "KS",
-    "AH", "2H", "3H", "4H", "5H", "6H", "7H", "8H", "9H", "TH", "JH", "QH", "KH",
-    "AD", "2D", "3D", "4D", "5D", "6D", "7D", "8D", "9D", "TD", "JD", "QD", "KD",
-    "AC", "2C", "3C", "4C", "5C", "6C", "7C", "8C", "9C", "TC", "JC", "QC", "KC",
-];
-
-// TODO: Fabricate a better initial deck.  For now, shuffle
-shuffleArray(fullDeck);
-
-// Create the initial state.  There are 3 CHUs to display on the screen
-var editMode = true;
-var dealerCards = [];
-var playerCards = [];
-var controlCh = new CardHandlerUnit("Control", "control_", fullDeck);
-var ch1 = new CardHandlerUnit("CH1 (Dealer)", "ch1_");
-var ch2 = new CardHandlerUnit("CH2 (Whale)", "ch2_");
-var allCh = [controlCh, ch1, ch2];
-
-// Hookup the left/right outputs of each unit
-var appendCh1 = function(card) { ch1.appendCard(card); };
-var appendCh2 = function(card) { ch2.appendCard(card); };
-controlCh.left = appendCh1;
-ch2.left = appendCh1;
-controlCh.right = appendCh2;
-ch1.right = appendCh2;
-
-// Hook up the deal action of each unit
-controlCh.deal = function(card) { alert("Control unit tried to deal card " + card); };
-ch1.deal  = function(card) {
-    dealerCards.push(card);
-    updateDealtCards();
-};
-ch2.deal = function(card) {
-    playerCards.push(card);
-    updateDealtCards();
-};
-
-window.onload = init;
-
 function nextLine() {
     for (var ch of allCh) {
         // Short-circuit evaluation means we won't keep running if an error is encountered
-        if (!(ch.executeStage1() && ch.executeStage2() && ch.nextLine())) {
+        if (!(ch.executeStage1() && ch.executeStage2() && ch.advanceToNextLine())) {
             // Disable the "next" button since we can't advance.  Leave the "reset" button enabled
             document.getElementById('next_button').disabled = true;
         }
+        ch.updateRegisters();
     }
 }
 
@@ -709,3 +707,43 @@ function shuffleArray(array) {
 function getRandomInt(maxNonInclusive) {
     return Math.floor(Math.random() * Math.floor(maxNonInclusive));
 }
+
+fullDeck = [
+    "AS", "2S", "3S", "4S", "5S", "6S", "7S", "8S", "9S", "TS", "JS", "QS", "KS",
+    "AH", "2H", "3H", "4H", "5H", "6H", "7H", "8H", "9H", "TH", "JH", "QH", "KH",
+    "AD", "2D", "3D", "4D", "5D", "6D", "7D", "8D", "9D", "TD", "JD", "QD", "KD",
+    "AC", "2C", "3C", "4C", "5C", "6C", "7C", "8C", "9C", "TC", "JC", "QC", "KC",
+];
+
+// TODO: Fabricate a better initial deck.  For now, shuffle
+shuffleArray(fullDeck);
+
+// Create the initial state.  There are 3 CHUs to display on the screen
+var editMode = true;
+var dealerCards = [];
+var playerCards = [];
+var controlCh = new CardHandlerUnit("Control", "control_", fullDeck);
+var ch1 = new CardHandlerUnit("CH1 (Dealer)", "ch1_");
+var ch2 = new CardHandlerUnit("CH2 (Whale)", "ch2_");
+var allCh = [ch2, ch1, controlCh];
+
+// Hookup the left/right outputs of each unit
+var appendCh1 = function(card) { ch1.appendCard(card); };
+var appendCh2 = function(card) { ch2.appendCard(card); };
+controlCh.left = appendCh1;
+ch2.left = appendCh1;
+controlCh.right = appendCh2;
+ch1.right = appendCh2;
+
+// Hook up the deal action of each unit
+controlCh.deal = function(card) { alert("Control unit tried to deal card " + card); };
+ch1.deal  = function(card) {
+    dealerCards.push(card);
+    updateDealtCards();
+};
+ch2.deal = function(card) {
+    playerCards.push(card);
+    updateDealtCards();
+};
+
+window.onload = init;
