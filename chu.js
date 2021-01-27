@@ -640,12 +640,23 @@ class CardHandlerUnit {
 }
 
 function nextLine() {
+    var success = true;
+    // All units must go through each stage before any advances to the next
     for (var ch of allCh) {
-        // Short-circuit evaluation means we won't keep running if an error is encountered
-        if (!(ch.executeStage1() && ch.executeStage2() && ch.advanceToNextLine())) {
-            // Disable the "next" button since we can't advance.  Leave the "reset" button enabled
-            document.getElementById('next_button').disabled = true;
-        }
+        success &= ch.executeStage1();
+    }
+    for (var ch of allCh) {
+        success &= ch.executeStage2();
+    }
+    for (var ch of allCh) {
+        success &= ch.advanceToNextLine();
+    }
+    if (!success) {
+        // Disable the "next" button since we can't advance.  Leave the "reset" button enabled
+        document.getElementById('next_button').disabled = true;
+    }
+
+    for (var ch of allCh) {
         ch.updateRegisters();
     }
 }
