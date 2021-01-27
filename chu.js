@@ -1,5 +1,5 @@
 class CardHandlerUnit {
-    constructor(name, prefix, initialInputQueue = []) {
+    constructor(name, prefix, initialProgram = "", initialInputQueue = []) {
         // The name displayed above this CHU
         this.name = name;
         // The unique prefix prepended to all HTML elements created by this CHU
@@ -33,6 +33,8 @@ class CardHandlerUnit {
         this.down = null;
         this.left = null;
         this.right = null;
+        // The program that is loaded if no user data exists in localStore during rendering
+        this.initialProgram = initialProgram;
     }
 
     // div IDs for the controls.  All will be prefixed with the contents of prefix
@@ -82,9 +84,13 @@ class CardHandlerUnit {
             var prev = localStorage.getItem(this.prefix);
             if (prev != null) {
                 sourceCode.value = localStorage.getItem(this.prefix);
+            } else {
+                // Fill in the default program
+                sourceCode.value = this.initialProgram;
             }
         } catch(err) {
-            // local storage is disabled or absent;
+            // local storage is disabled or absent
+            sourceCode.value = this.initialProgram;
         }
         wrapper.appendChild(sourceCode);
         var regs = document.createElement('table');
@@ -272,7 +278,7 @@ class CardHandlerUnit {
 
     /** Reads a numeric literal or the value of a register named by the provided string */
     readValue(regOrLiteral) {
-        if (this.validReadableRegister(regOrLiteral)) {
+        if (CardHandlerUnit.validReadableRegister(regOrLiteral)) {
             switch (regOrLiteral) {
             case "R0":
                 return this.reg[0];
@@ -448,7 +454,7 @@ class CardHandlerUnit {
                 }
             }
             if (!CardHandlerUnit.validWritableRegister(tokens[3])) {
-                this.showError("Cannot write to register '" + tokens[1] + "'", lineNum);
+                this.showError("Cannot write to register '" + tokens[3] + "'", lineNum);
                 return CardHandlerUnit.INVALID_INSTRUCTION; 
             }
             break;
@@ -539,8 +545,8 @@ class CardHandlerUnit {
         document.getElementById(this.prefix + CardHandlerUnit.cvalbId).value = this.cvalb();
         document.getElementById(this.prefix + CardHandlerUnit.suitId).value = this.suit();
         document.getElementById(this.prefix + CardHandlerUnit.r0Id).value = this.reg[0];
-        document.getElementById(this.prefix + CardHandlerUnit.r1Id).value = this.reg[0];
-        document.getElementById(this.prefix + CardHandlerUnit.r2Id).value = this.reg[0];
+        document.getElementById(this.prefix + CardHandlerUnit.r1Id).value = this.reg[1];
+        document.getElementById(this.prefix + CardHandlerUnit.r2Id).value = this.reg[2];
         document.getElementById(this.prefix + CardHandlerUnit.inputQueueId).value = this.inputQueue.join(" ");
     }
 
@@ -733,9 +739,10 @@ shuffleArray(fullDeck);
 var editMode = true;
 var dealerCards = [];
 var playerCards = [];
-var controlCh = new CardHandlerUnit("Control", "control_", fullDeck);
-var ch1 = new CardHandlerUnit("CH1 (Dealer)", "ch1_");
-var ch2 = new CardHandlerUnit("CH2 (Whale)", "ch2_");
+var controlCh = new CardHandlerUnit("Control", "control_", "LOOP:\nRRAND\nSEND LEFT\nRRAND\nSEND RIGHT\nJMP LOOP", fullDeck);
+const ch12defaultProgram = "LOOP:\nREAD\nDEAL\nJMP LOOP";
+var ch1 = new CardHandlerUnit("CH1 (Dealer)", "ch1_", ch12defaultProgram);
+var ch2 = new CardHandlerUnit("CH2 (Whale)", "ch2_", ch12defaultProgram);
 var allCh = [ch2, ch1, controlCh];
 
 // Hookup the left/right outputs of each unit
