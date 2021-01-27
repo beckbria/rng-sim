@@ -688,6 +688,7 @@ function toggleEdit() {
             resetBtn.disabled = true;
         }
     }
+    resetDealtCards();
 }
 
 function resetState() {
@@ -697,6 +698,13 @@ function resetState() {
     if (!editMode) {
         document.getElementById('next_button').disabled = false;
     }
+    resetDealtCards();
+}
+
+function resetDealtCards() {
+    dealerCards = [];
+    playerCards = [];
+    updateDealtCards();
 }
 
 function updateDealtCards() {
