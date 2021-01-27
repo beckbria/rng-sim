@@ -12,6 +12,7 @@
         <button type="button" id="edit_button" onclick="toggleEdit()">Run Mode</button>
         <button type="button" id="next_button" onclick="nextLine()" disabled>Next</button>
         <button type="button" id="reset_button" onclick="resetState()" disabled>Reset</button>
+        <button type="button" id="run_button" onclick="runGame()" disabled>Run</button>
         <table>
             <tr>
                 <td>
@@ -53,8 +54,9 @@
         </table>
         <br>
         <table>
-            <tr><td>Dealer Cards: </td><td><input id="dealer_cards" readonly size="20"></input></td></tr>
-            <tr><td>Player Cards: </td><td><input id="player_cards" readonly size="20"></input></td></tr>
+            <tr><td>Dealer Cards:</td><td><input id="dealer_cards" readonly size="20"></input></td></tr>
+            <tr><td>Player Cards:</td><td><input id="player_cards" readonly size="20"></input></td></tr>
+            <tr><td>Game State:</td><td><textarea id="blackjack_state" readonly rows="10" cols="40"></textarea></tr>
         </table>
         <div id="rules">
             <h3>Blackjack <a href="https://bicyclecards.com/how-to-play/blackjack/">Rules</a>:</h3>

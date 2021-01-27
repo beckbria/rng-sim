@@ -551,10 +551,18 @@ class CardHandlerUnit {
     }
 
     cval() {
-        if (this.card.length < 2) {
+        return CardHandlerUnit.cardValue(this.card);
+    }
+
+    cvalb() {
+        return CardHandlerUnit.cardValueAdjusted(this.card);
+    }
+
+    static cardValue(c) {
+        if (c.length != 2) {
             return 0;
         }
-        switch (this.card.substr(0,1)) {
+        switch (c.substr(0,1)) {
             case "A":
                 return 1;
             case "2":
@@ -582,16 +590,13 @@ class CardHandlerUnit {
             case "K":
                 return 13;
             }
-            alert(this.name + ": Invalid card value: " + this.card.substr(1,1));
+            alert(this.name + ": Invalid card value: " + c.substr(0,1));
             return 0;
     }
 
-    cvalb() {
-        var c = this.cval();
-        if (c > 10) {
-            return 10;
-        }
-        return c;
+    static cardValueAdjusted(c) {
+        var cv = CardHandlerUnit.cardValue(c);
+        return cv > 10 ? 10 : cv;
     }
 
     suit() {
@@ -660,32 +665,43 @@ function nextLine() {
     if (!success) {
         // Disable the "next" button since we can't advance.  Leave the "reset" button enabled
         document.getElementById('next_button').disabled = true;
+        document.getElementById('run_button').disabled = true;
     }
 
     for (var ch of allCh) {
         ch.updateRegisters();
     }
+
+    return success;
+}
+
+function runGame() {
+    while (!gameComplete && nextLine()) {}
 }
 
 function toggleEdit() {
     editMode = !editMode;
     var editBtn = document.getElementById('edit_button');
     var nextBtn = document.getElementById('next_button');
+    var runBtn = document.getElementById('run_button');
     var resetBtn = document.getElementById('reset_button');
     if (editMode) {
         editBtn.innerHTML = 'To Run Mode';
         nextBtn.disabled = true;
+        runBtn.disabled = true;
         resetBtn.disabled = true;
     } else {
         editBtn.innerHTML = 'To Edit Mode';
         nextBtn.disabled = false;
         resetBtn.disabled = false;
+        runBtn.disabled = false;
     }
     for (var ch of allCh) {
         if (!ch.setEditMode(editMode)) {
             // Transitioning mode failed.  Disable the next and reset buttons until the code is edited
             nextBtn.disabled = true;
             resetBtn.disabled = true;
+            runBtn.disabled = true;
         }
     }
     resetDealtCards();
@@ -697,6 +713,7 @@ function resetState() {
     }
     if (!editMode) {
         document.getElementById('next_button').disabled = false;
+        document.getElementById('run_button').disabled = false;
     }
     resetDealtCards();
 }
@@ -710,7 +727,113 @@ function resetDealtCards() {
 function updateDealtCards() {
     document.getElementById('dealer_cards').value = dealerCards.join(", ");
     document.getElementById('player_cards').value = playerCards.join(", ");
-    // TODO: Blackjack logic
+    updateBlackjackState();
+}
+
+var gameComplete = false;
+
+function updateBlackjackState() {
+    gameComplete = false;
+
+    var bj = document.getElementById('blackjack_state');
+    if (dealerCards.length == 0) {
+        bj.value = "Waiting for first dealer card";
+        return;
+    }
+    var dealerTotal = CardHandlerUnit.cardValueAdjusted(dealerCards[0])
+    var state = "Dealer face-up: " + dealerCards[0] + "(" + dealerTotal + ")" + "\n";
+    var playerTarget = 17;
+    if (dealerTotal < 7 && dealerTotal > 1) {
+        playerTarget = 12;
+    }
+    state += "Player target: " + playerTarget + "\n"
+
+    if (playerCards.length < 2) {
+        state += "Waiting for initial player cards\n";
+        bj.value = state;
+        return;
+    }
+
+    var softAceCount = 0;
+    var stand = false;
+    var playerTotal = 0;
+
+    // Draw cards for the player
+    for (var i = 0; !stand && i < playerCards.length; i++) {
+        var card = playerCards[i];
+        var cv = CardHandlerUnit.cardValueAdjusted(card)
+        playerTotal += cv
+        if (cv == 1 && playerTotal <= 11) {
+            playerTotal += 10;
+            softAceCount++;
+        }
+
+        while (softAceCount > 0 && playerTotal > 21) {
+            playerTotal -= 10;
+            softAceCount--;
+        }
+        state += "Player draws " + card + " for a total of " + playerTotal;
+        if (softAceCount > 0) {
+            state += " (soft)";
+        }
+        state += "\n";
+
+        if (playerTotal >= playerTarget && (playerTotal >= 18 || softAceCount == 0)) {
+            stand = true;
+            state += (playerTotal > 21 ? "Player busts\n" : "Player stands\n");
+        }
+    }
+
+    if (!stand) {
+        state += "Waiting for more player cards\n";
+        bj.value = state;
+        return;
+    }
+
+    // Draw cards for the dealer
+    stand = false;
+    softAceCount = 0;
+
+    for (var i = 1; !stand && i < dealerCards.length; i++) {
+        var card = dealerCards[i];
+        var cv = CardHandlerUnit.cardValueAdjusted(card)
+        dealerTotal += cv
+        if (cv == 1 && dealerTotal <= 11) {
+            dealerTotal += 10;
+            softAceCount++;
+        }
+
+        while (softAceCount > 0 && dealerTotal > 21) {
+            dealerTotal -= 10;
+            softAceCount--;
+        }
+        state += "Dealer draws " + card + " for a total of " + dealerTotal;
+        if (softAceCount > 0) {
+            state += " (soft)";
+        }
+        state += "\n";
+
+        if (dealerTotal >= 17) {
+            stand = true;
+            state += (dealerTotal > 21 ? "Dealer busts\n" : "Dealer stands\n");
+        }
+    }
+
+    if (!stand) {
+        state += "Waiting for more dealer cards\n";
+        bj.value = state;
+        return;
+    }
+
+    gameComplete = true;
+    if (playerTotal > 21 || (playerTotal < dealerTotal && dealerTotal <= 21)) {
+        state += "Dealer wins\n";
+    } else if (playerTotal == dealerTotal) {
+        state += "Tie\n";
+    } else {
+        state += "Player wins\n";
+    }
+    bj.value = state;
 }
 
 function init() {
