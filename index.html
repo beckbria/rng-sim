@@ -8,6 +8,7 @@
     </head>
     <body>
         <h2>ACD-2 Card Dealer</h2>
+        <h3><a href="https://docs.google.com/document/d/1w_JfY6w8Ijv_93B2lgAcALdwrYuBmG41uD4CvHUNMiw/edit">User Manual</a></h3>
         <button type="button" id="edit_button" onclick="toggleEdit()">Run Mode</button>
         <button type="button" id="next_button" onclick="nextLine()" disabled>Next</button>
         <button type="button" id="reset_button" onclick="resetState()" disabled>Reset</button>
@@ -55,6 +56,15 @@
             <tr><td>Dealer Cards: </td><td><input id="dealer_cards" readonly size="4"></input></td></tr>
             <tr><td>Player Cards: </td><td><input id="player_cards" readonly size="4"></input></td></tr>
         </table>
-        <div id="foo"></div>
+        <div id="rules">
+            <h3>Blackjack <a href="https://bicyclecards.com/how-to-play/blackjack/">Rules</a>:</h3>
+            <ul>
+                <li>The first card dealt to each player is face-up.  The second is face down</li>
+                <li>After two cards are dealt to all players, the non-dealer players may hit or stand.  When they have finished, the dealer will hit or stand</li>
+                <li>The <b>Dealer</b> will hit on 16 or lower and stand on 17 or higher</li>
+                <li>If the dealer is showing a 7, 8, 9, 10, or Ace, the whale will hit until their title is 17 or higher</li>
+                <li>If the dealer is showing a 2, 3, 4, 5, or 6, the whale will hit until their title is 12 or higher</li>
+            </ul>
+        </div>
     </body>
 </html>
