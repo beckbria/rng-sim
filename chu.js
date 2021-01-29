@@ -222,21 +222,39 @@ class CardHandlerUnit {
                 this.nextLine = this.labels[instr[1]];
                 break;
 
-            case "JZ":
-                if (this.readValue(instr[1]) == 0) {
-                    this.nextLine = this.labels[instr[1]];
+            case "JE":
+                if (this.readValue(instr[1]) == this.readValue(instr[2])) {
+                    this.nextLine = this.labels[instr[3]];
                 }
                 break;
 
-            case "JNZ":
-                if (this.readValue(instr[1]) != 0) {
-                    this.nextLine = this.labels[instr[1]];
+            case "JNE":
+                if (this.readValue(instr[1]) != this.readValue(instr[2])) {
+                    this.nextLine = this.labels[instr[3]];
                 }
                 break;
 
-            case "JGZ":
-                if (this.readValue(instr[1]) >= 0) {
-                    this.nextLine = this.labels[instr[1]];
+            case "JGT":
+                if (this.readValue(instr[1]) > this.readValue(instr[2])) {
+                    this.nextLine = this.labels[instr[3]];
+                }
+                break;
+
+            case "JGE":
+                if (this.readValue(instr[1]) >= this.readValue(instr[2])) {
+                    this.nextLine = this.labels[instr[3]];
+                }
+                break;
+
+            case "JLT":
+                if (this.readValue(instr[1]) < this.readValue(instr[2])) {
+                    this.nextLine = this.labels[instr[3]];
+                }
+                break;
+
+            case "JLE":
+                if (this.readValue(instr[1]) <= this.readValue(instr[2])) {
+                    this.nextLine = this.labels[instr[3]];
                 }
                 break;
 
@@ -486,19 +504,24 @@ class CardHandlerUnit {
                 }
                 break;
 
-            case "JZ":
-            case "JNZ":
-            case "JGZ":
-                if (tokens.length != 3) {
-                    this.showError(tokens.length < 3 ? tooFewError : tooManyError, lineNum);
+            case "JE":
+            case "JNE":
+            case "JGT":
+            case "JGE":
+            case "JLT":
+            case "JLE":
+                if (tokens.length != 4) {
+                    this.showError(tokens.length < 4 ? tooFewError : tooManyError, lineNum);
                     return CardHandlerUnit.INVALID_INSTRUCTION;
                 }
-                if (!CardHandlerUnit.validReadableRegister(tokens[1])) {
-                    this.showError("Cannot read from register '" + tokens[1] + "'", lineNum);
-                    return CardHandlerUnit.INVALID_INSTRUCTION;
+                for (var i = 1; i <= 2; i++) {
+                    if (!CardHandlerUnit.validReadableOrLiteral(tokens[i])) {
+                        this.showError("Invalid value '" + tokens[i] + "'", lineNum);
+                        return CardHandlerUnit.INVALID_INSTRUCTION;
+                    }
                 }
-                if (!CardHandlerUnit.validLabelName(tokens[2])) {
-                    this.showError("Invalid label name '" + tokens[2] + "'", lineNum);
+                if (!CardHandlerUnit.validLabelName(tokens[3])) {
+                    this.showError("Invalid label name '" + tokens[3] + "'", lineNum);
                     return CardHandlerUnit.INVALID_INSTRUCTION;
                 }
                 break;
