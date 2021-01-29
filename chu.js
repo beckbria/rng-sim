@@ -20,8 +20,7 @@ class CardHandlerUnit {
         // The card currently held by this CHU
         this.card = "";
         // General-purpose registers
-        // TODO: Consider changing this to a map
-        this.reg = [0,0,0];
+        this.reg = [0, 0, 0, 0, 0];
         // The cards currently available in the input queue
         this.inputQueue = [...initialInputQueue];
         // A copy of the initial contents for reset purposes
@@ -45,18 +44,22 @@ class CardHandlerUnit {
     static r0Id = 'r0';
     static r1Id = 'r1';
     static r2Id = 'r2';
+    static r3Id = 'r3';
+    static r4Id = 'r4';
     static inputQueueId = 'input_queue';
     static titleId = 'title';
     static registersId = 'regs';
     // A list of all the state variables used to generate the UI to display them
     static registerMap = [
-        {name: "CVAL", id: CardHandlerUnit.cvalId},
-        {name: "CVALB", id: CardHandlerUnit.cvalbId},
-        {name: "SUIT", id: CardHandlerUnit.suitId},
-        {name: "R0", id: CardHandlerUnit.r0Id},
-        {name: "R1", id: CardHandlerUnit.r1Id},
-        {name: "R2", id: CardHandlerUnit.r2Id},
-        {name: "INPUT", id: CardHandlerUnit.inputQueueId},
+        { name: "CVAL", id: CardHandlerUnit.cvalId },
+        { name: "CVALB", id: CardHandlerUnit.cvalbId },
+        { name: "SUIT", id: CardHandlerUnit.suitId },
+        { name: "R0", id: CardHandlerUnit.r0Id },
+        { name: "R1", id: CardHandlerUnit.r1Id },
+        { name: "R2", id: CardHandlerUnit.r2Id },
+        { name: "R3", id: CardHandlerUnit.r3Id },
+        { name: "R4", id: CardHandlerUnit.r4Id },
+        { name: "INPUT", id: CardHandlerUnit.inputQueueId },
     ];
 
     /** render draws the UI for this CHU in the provided div name
@@ -88,7 +91,7 @@ class CardHandlerUnit {
                 // Fill in the default program
                 sourceCode.value = this.initialProgram;
             }
-        } catch(err) {
+        } catch (err) {
             // local storage is disabled or absent
             sourceCode.value = this.initialProgram;
         }
@@ -118,7 +121,7 @@ class CardHandlerUnit {
         this.currentLine = 0;
         this.nextLine = 1;
         this.card = "";
-        this.reg = [0,0,0]
+        this.reg = [0, 0, 0, 0, 0]
         this.inputQueue = [...this.initialInputQueue];
         this.advanceToNextNonLabel();
         this.resetCursor();
@@ -168,76 +171,77 @@ class CardHandlerUnit {
         const instr = this.inst[this.currentLine];
 
         switch (instr[0]) {
-        case "LABEL":
-        case "NOP":
-        case "SEND":    // Send handled in stage 2
-            break;
+            case "":
+            case "LABEL":
+            case "NOP":
+            case "SEND":    // Send handled in stage 2
+                break;
 
-        case "READ":
-        case "RRAND":
-            if (this.card != "") {
-                this.showError("Attempted to read a card while containing a card");
-                return false;
-            }
-            if (this.inputQueue.length == 0) {
-                this.nextLine = this.currentLine;
-                return true;
-            }
-            var cardToTake = 0;
-            if (instr[0] == "RRAND") {
-                // Take a random card instead
-                cardToTake = getRandomInt(this.inputQueue.length);
-            }
-            this.card = this.inputQueue[cardToTake];
-            this.inputQueue.splice(cardToTake, 1);
-            break;
+            case "READ":
+            case "RRAND":
+                if (this.card != "") {
+                    this.showError("Attempted to read a card while containing a card");
+                    return false;
+                }
+                if (this.inputQueue.length == 0) {
+                    this.nextLine = this.currentLine;
+                    return true;
+                }
+                var cardToTake = 0;
+                if (instr[0] == "RRAND") {
+                    // Take a random card instead
+                    cardToTake = getRandomInt(this.inputQueue.length);
+                }
+                this.card = this.inputQueue[cardToTake];
+                this.inputQueue.splice(cardToTake, 1);
+                break;
 
-        case "DEAL":
-            if (this.deal == null) {
-                this.showError("Attempted to deal but no deal output");
-                return false;
-            }
-            this.deal(this.card);
-            this.card = "";
-            break;
+            case "DEAL":
+                if (this.deal == null) {
+                    this.showError("Attempted to deal but no deal output");
+                    return false;
+                }
+                this.deal(this.card);
+                this.card = "";
+                break;
 
-        case "ADD":
-        case "SUB":
-            const first = this.readValue(instr[1]);
-            const second = this.readValue(instr[2]);
-            const result = instr[0] == "ADD" ? first + second : first - second;
-            this.writeValue(instr[3], result);
-            break;
+            case "ADD":
+            case "SUB":
+                const first = this.readValue(instr[1]);
+                const second = this.readValue(instr[2]);
+                const result = instr[0] == "ADD" ? first + second : first - second;
+                this.writeValue(instr[3], result);
+                break;
 
-        case "NEG":
-            const inv = 0 - this.readValue(instr[1]);
-            this.writeValue(instr[1], inv);
-            break;
+            case "NEG":
+                const inv = 0 - this.readValue(instr[1]);
+                this.writeValue(instr[1], inv);
+                break;
 
-        case "JMP":
-            this.nextLine = this.labels[instr[1]];
-            break;
-
-        case "JZ":
-            if (this.readValue(instr[1]) == 0) {
+            case "JMP":
                 this.nextLine = this.labels[instr[1]];
-            }
-            break;
+                break;
 
-        case "JNZ":
-            if (this.readValue(instr[1]) != 0) {
-                this.nextLine = this.labels[instr[1]];
-            }
-            break;
+            case "JZ":
+                if (this.readValue(instr[1]) == 0) {
+                    this.nextLine = this.labels[instr[1]];
+                }
+                break;
 
-        case "JGZ":
-            if (this.readValue(instr[1]) >= 0) {
-                this.nextLine = this.labels[instr[1]];
-            }
-            break;
+            case "JNZ":
+                if (this.readValue(instr[1]) != 0) {
+                    this.nextLine = this.labels[instr[1]];
+                }
+                break;
 
-        default:
-            this.showError("INTERNAL ERROR: Unknown command " + instr);
+            case "JGZ":
+                if (this.readValue(instr[1]) >= 0) {
+                    this.nextLine = this.labels[instr[1]];
+                }
+                break;
+
+            default:
+                this.showError("INTERNAL ERROR: Unknown command " + instr);
         }
 
         return true;
@@ -249,21 +253,21 @@ class CardHandlerUnit {
         if (instr[0] == "SEND") {
             var dest = null;
             switch (instr[1]) {
-            case "LEFT":
-                dest = this.left;
-                break;
-            case "RIGHT":
-                dest = this.right;
-                break;
-            case "UP":
-                dest = this.up;
-                break;
-            case "DOWN":
-                dest = this.down;
-                break;
-            default:
-                this.showError("INTERNAL ERROR: invalid direction '" + instr[1] + "'");
-                return false;
+                case "LEFT":
+                    dest = this.left;
+                    break;
+                case "RIGHT":
+                    dest = this.right;
+                    break;
+                case "UP":
+                    dest = this.up;
+                    break;
+                case "DOWN":
+                    dest = this.down;
+                    break;
+                default:
+                    this.showError("INTERNAL ERROR: invalid direction '" + instr[1] + "'");
+                    return false;
             }
 
             if (dest == null) {
@@ -280,40 +284,42 @@ class CardHandlerUnit {
     readValue(regOrLiteral) {
         if (CardHandlerUnit.validReadableRegister(regOrLiteral)) {
             switch (regOrLiteral) {
-            case "R0":
-                return this.reg[0];
-            case "R1":
-                return this.reg[1];
-            case "R2":
-                return this.reg[2];
-            case "CVAL":
-                return this.cval();
-            case "CVALB":
-                return this.cvalb();
-            case "SUIT":
-                return this.suit();
-            default:
-                this.showError("INTERNAL ERROR: readValue out of sync with validReadableRegister");
-                return 0;
+                case "R0":
+                case "R1":
+                case "R2":
+                case "R3":
+                case "R4":
+                    return this.reg[this.regNum(regOrLiteral)];
+                case "CVAL":
+                    return this.cval();
+                case "CVALB":
+                    return this.cvalb();
+                case "SUIT":
+                    return this.suit();
+                default:
+                    this.showError("INTERNAL ERROR: readValue out of sync with validReadableRegister");
+                    return 0;
             }
         }
         return parseInt(regOrLiteral, 10);
     }
 
     /** Writes to a register */
-    writeValue(reg, value) {
-        switch(reg) {
-        case "R0":
-            this.reg[0] = value;
-            break;
-        case "R1":
-            this.reg[1] = value;
-            break;
-        case "R2":
-            this.reg[2] = value;
-            break;
-        default:
-            this.showError("INTERNAL ERROR: Attempt to write value '" + value + "' to invalid register '" + reg + "'");
+    writeValue(register, value) {
+        this.reg[this.regNum(register)] = value;
+    }
+
+    regNum(register) {
+        switch (register) {
+            case "R0":
+            case "R1":
+            case "R2":
+            case "R3":
+            case "R4":
+                return parseInt(register.substr(1, 1), 10);
+            default:
+                this.showError("INTERNAL ERROR: Attempt to access invalid register '" + register + "'");
+                return 0;
         }
     }
 
@@ -329,7 +335,7 @@ class CardHandlerUnit {
     }
 
     advanceToNextNonLabel() {
-        while (this.currentLine < this.inst.length && this.inst[this.currentLine][0] == "LABEL") {
+        while (this.currentLine < this.inst.length && ["LABEL", ""].includes(this.inst[this.currentLine][0])) {
             this.currentLine++;
             this.nextLine = this.currentLine + 1;
         }
@@ -356,7 +362,9 @@ class CardHandlerUnit {
         this.labels = new Map();
         var labelsLookingForNextInst = [];
         for (var lineNum = 0; lineNum < this.inst.length; lineNum++) {
-            if (this.inst[lineNum][0] == "LABEL") {
+            if (this.inst[lineNum][0] == "") {
+                continue;
+            } else if (this.inst[lineNum][0] == "LABEL") {
                 labelsLookingForNextInst.push(this.inst[lineNum][1]);
             } else {
                 for (const label of labelsLookingForNextInst) {
@@ -378,7 +386,7 @@ class CardHandlerUnit {
     }
 
     static validWritableRegister(regName) {
-        return regName == "R0" || regName == "R1" || regName == "R2";
+        return ["R0", "R1", "R2", "R3", "R4"].includes(regName);
     }
 
     static validReadableRegister(regName) {
@@ -411,117 +419,114 @@ class CardHandlerUnit {
     /** Parse a single instruction */
     parseInst(line, lineNum) {
         var tokens = line.trim().toUpperCase().split(" ");
-        if (tokens.length == 0) {
-            this.showError("Empty line", lineNum);
-            return CardHandlerUnit.INVALID_INSTRUCTION;
-        }
 
         const tooManyError = "Too many arguments";
         const tooFewError = "Insufficient arguments";
 
         switch (tokens[0]) {
-        case "READ":
-        case "RRAND":
-        case "DEAL":
-        case "NOP":
-            if (tokens.length != 1) {
-                this.showError(tooManyError, lineNum);
-                return CardHandlerUnit.INVALID_INSTRUCTION; 
-            }
-            break;
-
-        case "SEND":
-            if (tokens.length != 2) {
-                this.showError(tokens.length == 1 ? tooFewError : tooManyError, lineNum);
-                return CardHandlerUnit.INVALID_INSTRUCTION; 
-            }
-            if (!CardHandlerUnit.validOutputRegister(tokens[1])) {
-                this.showError("Invalid destination '" + tokens[1] + "'", lineNum);
-                return CardHandlerUnit.INVALID_INSTRUCTION; 
-            }
-            break;
-
-        case "ADD":
-        case "SUB":
-            if (tokens.length != 4) {
-                this.showError(tokens.length < 4 ? tooFewError : tooManyError, lineNum);
-                return CardHandlerUnit.INVALID_INSTRUCTION; 
-            }
-            for (var i = 1; i <= 2; i++) {
-                if (!CardHandlerUnit.validReadableOrLiteral(tokens[i])) {
-                    this.showError("Invalid value '" + tokens[i] + "'", lineNum);
-                    return CardHandlerUnit.INVALID_INSTRUCTION; 
+            case "":
+            case "READ":
+            case "RRAND":
+            case "DEAL":
+            case "NOP":
+                if (tokens.length != 1) {
+                    this.showError(tooManyError, lineNum);
+                    return CardHandlerUnit.INVALID_INSTRUCTION;
                 }
-            }
-            if (!CardHandlerUnit.validWritableRegister(tokens[3])) {
-                this.showError("Cannot write to register '" + tokens[3] + "'", lineNum);
-                return CardHandlerUnit.INVALID_INSTRUCTION; 
-            }
-            break;
+                break;
 
-        case "NEG":
-            if (tokens.length != 2) {
-                this.showError(tokens.length == 1 ? tooFewError : tooManyError, lineNum);
-                return CardHandlerUnit.INVALID_INSTRUCTION; 
-            }
-            if (!CardHandlerUnit.validWritableRegister(tokens[1])) {
-                this.showError("Cannot write to register '" + tokens[1] + "'", lineNum);
-                return CardHandlerUnit.INVALID_INSTRUCTION; 
-            }
-            break;
+            case "SEND":
+                if (tokens.length != 2) {
+                    this.showError(tokens.length == 1 ? tooFewError : tooManyError, lineNum);
+                    return CardHandlerUnit.INVALID_INSTRUCTION;
+                }
+                if (!CardHandlerUnit.validOutputRegister(tokens[1])) {
+                    this.showError("Invalid destination '" + tokens[1] + "'", lineNum);
+                    return CardHandlerUnit.INVALID_INSTRUCTION;
+                }
+                break;
 
-        case "JMP":
-            if (tokens.length != 2) {
-                this.showError(tokens.length == 1 ? tooFewError : tooManyError, lineNum);
-                return CardHandlerUnit.INVALID_INSTRUCTION; 
-            }
-            if (!CardHandlerUnit.validLabelName(tokens[1])) {
-                this.showError("Invalid label name '" + tokens[1] + "'", lineNum);
-                return CardHandlerUnit.INVALID_INSTRUCTION; 
-            }
-            break;
+            case "ADD":
+            case "SUB":
+                if (tokens.length != 4) {
+                    this.showError(tokens.length < 4 ? tooFewError : tooManyError, lineNum);
+                    return CardHandlerUnit.INVALID_INSTRUCTION;
+                }
+                for (var i = 1; i <= 2; i++) {
+                    if (!CardHandlerUnit.validReadableOrLiteral(tokens[i])) {
+                        this.showError("Invalid value '" + tokens[i] + "'", lineNum);
+                        return CardHandlerUnit.INVALID_INSTRUCTION;
+                    }
+                }
+                if (!CardHandlerUnit.validWritableRegister(tokens[3])) {
+                    this.showError("Cannot write to register '" + tokens[3] + "'", lineNum);
+                    return CardHandlerUnit.INVALID_INSTRUCTION;
+                }
+                break;
 
-        case "JZ":
-        case "JNZ":
-        case "JGZ":
-            if (tokens.length != 3) {
-                this.showError(tokens.length < 3 ? tooFewError : tooManyError, lineNum);
-                return CardHandlerUnit.INVALID_INSTRUCTION; 
-            }
-            if (!CardHandlerUnit.validReadableRegister(tokens[1])) {
-                this.showError("Cannot read from register '" + tokens[1] + "'", lineNum);
-                return CardHandlerUnit.INVALID_INSTRUCTION; 
-            }
-            if (!CardHandlerUnit.validLabelName(tokens[2])) {
-                this.showError("Invalid label name '" + tokens[2] + "'", lineNum);
-                return CardHandlerUnit.INVALID_INSTRUCTION; 
-            }
-            break;
+            case "NEG":
+                if (tokens.length != 2) {
+                    this.showError(tokens.length == 1 ? tooFewError : tooManyError, lineNum);
+                    return CardHandlerUnit.INVALID_INSTRUCTION;
+                }
+                if (!CardHandlerUnit.validWritableRegister(tokens[1])) {
+                    this.showError("Cannot write to register '" + tokens[1] + "'", lineNum);
+                    return CardHandlerUnit.INVALID_INSTRUCTION;
+                }
+                break;
 
-        default:
-            // This could be a label
-            if (tokens.length != 1) {
-                this.showError("Incorrect syntax", lineNum);
-                return CardHandlerUnit.INVALID_INSTRUCTION; 
-            }
-            var tok = tokens[0];
-            if (tok.substr(tok.length - 1, 1) != ":") {
-                this.showError("Incorrect syntax", lineNum);
-                return CardHandlerUnit.INVALID_INSTRUCTION; 
-            }
-            // Trim off the colon
-            tok = tok.substr(0, tok.length - 1);
-            if (!CardHandlerUnit.validLabelName(tok)) {
-                this.showError("Invalid label name '" + tok + "'", lineNum);
-                return CardHandlerUnit.INVALID_INSTRUCTION; 
-            }
-            return CardHandlerUnit.validInstruction(["LABEL", tok]);
+            case "JMP":
+                if (tokens.length != 2) {
+                    this.showError(tokens.length == 1 ? tooFewError : tooManyError, lineNum);
+                    return CardHandlerUnit.INVALID_INSTRUCTION;
+                }
+                if (!CardHandlerUnit.validLabelName(tokens[1])) {
+                    this.showError("Invalid label name '" + tokens[1] + "'", lineNum);
+                    return CardHandlerUnit.INVALID_INSTRUCTION;
+                }
+                break;
+
+            case "JZ":
+            case "JNZ":
+            case "JGZ":
+                if (tokens.length != 3) {
+                    this.showError(tokens.length < 3 ? tooFewError : tooManyError, lineNum);
+                    return CardHandlerUnit.INVALID_INSTRUCTION;
+                }
+                if (!CardHandlerUnit.validReadableRegister(tokens[1])) {
+                    this.showError("Cannot read from register '" + tokens[1] + "'", lineNum);
+                    return CardHandlerUnit.INVALID_INSTRUCTION;
+                }
+                if (!CardHandlerUnit.validLabelName(tokens[2])) {
+                    this.showError("Invalid label name '" + tokens[2] + "'", lineNum);
+                    return CardHandlerUnit.INVALID_INSTRUCTION;
+                }
+                break;
+
+            default:
+                // This could be a label
+                if (tokens.length != 1) {
+                    this.showError("Incorrect syntax", lineNum);
+                    return CardHandlerUnit.INVALID_INSTRUCTION;
+                }
+                var tok = tokens[0];
+                if (tok.substr(tok.length - 1, 1) != ":") {
+                    this.showError("Incorrect syntax", lineNum);
+                    return CardHandlerUnit.INVALID_INSTRUCTION;
+                }
+                // Trim off the colon
+                tok = tok.substr(0, tok.length - 1);
+                if (!CardHandlerUnit.validLabelName(tok)) {
+                    this.showError("Invalid label name '" + tok + "'", lineNum);
+                    return CardHandlerUnit.INVALID_INSTRUCTION;
+                }
+                return CardHandlerUnit.validInstruction(["LABEL", tok]);
         }
         return CardHandlerUnit.validInstruction(tokens);
     }
 
-    static INVALID_INSTRUCTION = {valid: false, tokens: []};
-    static validInstruction(tokens) { return { valid: true, inst: tokens }};
+    static INVALID_INSTRUCTION = { valid: false, tokens: [] };
+    static validInstruction(tokens) { return { valid: true, inst: tokens } };
 
     /** Indicate an error */
     showError(err, lineNum = null) {
@@ -547,6 +552,8 @@ class CardHandlerUnit {
         document.getElementById(this.prefix + CardHandlerUnit.r0Id).value = this.reg[0];
         document.getElementById(this.prefix + CardHandlerUnit.r1Id).value = this.reg[1];
         document.getElementById(this.prefix + CardHandlerUnit.r2Id).value = this.reg[2];
+        document.getElementById(this.prefix + CardHandlerUnit.r3Id).value = this.reg[3];
+        document.getElementById(this.prefix + CardHandlerUnit.r4Id).value = this.reg[4];
         document.getElementById(this.prefix + CardHandlerUnit.inputQueueId).value = this.inputQueue.join(" ");
     }
 
@@ -554,7 +561,7 @@ class CardHandlerUnit {
         if (this.card.length < 2) {
             return 0;
         }
-        switch (this.card.substr(0,1)) {
+        switch (this.card.substr(0, 1)) {
             case "A":
                 return 1;
             case "2":
@@ -581,9 +588,9 @@ class CardHandlerUnit {
                 return 12;
             case "K":
                 return 13;
-            }
-            alert(this.name + ": Invalid card value: " + this.card.substr(1,1));
-            return 0;
+        }
+        alert(this.name + ": Invalid card value: " + this.card.substr(1, 1));
+        return 0;
     }
 
     cvalb() {
@@ -598,17 +605,17 @@ class CardHandlerUnit {
         if (this.card.length < 2) {
             return 0;
         }
-        switch (this.card.substr(1,1)) {
-        case "S":
-            return 1;
-        case "H":
-            return 2;
-        case "D":
-            return 3;
-        case "C":
-            return 4;
+        switch (this.card.substr(1, 1)) {
+            case "S":
+                return 1;
+            case "H":
+                return 2;
+            case "D":
+                return 3;
+            case "C":
+                return 4;
         }
-        alert(this.name + ": Invalid suit: " + this.card.substr(1,1));
+        alert(this.name + ": Invalid suit: " + this.card.substr(1, 1));
         return 0;
     }
 
@@ -617,19 +624,19 @@ class CardHandlerUnit {
     }
 
     static removePadding(textarea) {
-        textarea.value = CardHandlerUnit.linesWithDelimiter(textarea.value).reduce(function(result, line) {
+        textarea.value = CardHandlerUnit.linesWithDelimiter(textarea.value).reduce(function (result, line) {
             return result + line.substring(2);
         }, "");
     }
 
     static addPadding(textarea, currentLine) {
-        textarea.value = CardHandlerUnit.linesWithDelimiter(textarea.value).map(function(line, index) {
+        textarea.value = CardHandlerUnit.linesWithDelimiter(textarea.value).map(function (line, index) {
             if (index == currentLine) {
                 return ">>" + line;
             } else {
                 return "  " + line;
             }
-        }).reduce(function(result, line) {
+        }).reduce(function (result, line) {
             return result + line;
         }, "");
     }
@@ -754,20 +761,20 @@ var ch2 = new CardHandlerUnit("CH2 (Whale)", "ch2_", ch12defaultProgram);
 var allCh = [ch2, ch1, controlCh];
 
 // Hookup the left/right outputs of each unit
-var appendCh1 = function(card) { ch1.appendCard(card); };
-var appendCh2 = function(card) { ch2.appendCard(card); };
+var appendCh1 = function (card) { ch1.appendCard(card); };
+var appendCh2 = function (card) { ch2.appendCard(card); };
 controlCh.left = appendCh1;
 ch2.left = appendCh1;
 controlCh.right = appendCh2;
 ch1.right = appendCh2;
 
 // Hook up the deal action of each unit
-controlCh.deal = function(card) { alert("Control unit tried to deal card " + card); };
-ch1.deal  = function(card) {
+controlCh.deal = function (card) { alert("Control unit tried to deal card " + card); };
+ch1.deal = function (card) {
     dealerCards.push(card);
     updateDealtCards();
 };
-ch2.deal = function(card) {
+ch2.deal = function (card) {
     playerCards.push(card);
     updateDealtCards();
 };
