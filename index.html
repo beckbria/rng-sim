@@ -4,17 +4,21 @@
 <head>
     <meta charset="utf-8">
     <title>ACD-2 Card Dealing Unit</title>
-    <script src="./chu.js"></script>
+    <script type="module">
+        import { BlackjackGameWithUi } from "./blackjack.js";
+        var game = new BlackjackGameWithUi();
+        window.onload = function () { game.render(); };
+    </script>
 </head>
 
 <body>
     <h2>ACD-2 Card Dealer</h2>
     <h3><a href="https://docs.google.com/document/d/1w_JfY6w8Ijv_93B2lgAcALdwrYuBmG41uD4CvHUNMiw/edit">User Manual</a>
     </h3>
-    <button type="button" id="edit_button" onclick="toggleEdit()">Run Mode</button>
-    <button type="button" id="next_button" onclick="nextLine()" disabled>Next</button>
-    <button type="button" id="reset_button" onclick="resetState()" disabled>Reset</button>
-    <button type="button" id="run_button" onclick="runGame()" disabled>Run</button>
+    <button type="button" id="edit_button">Run Mode</button>
+    <button type="button" id="next_button" disabled>Next</button>
+    <button type="button" id="reset_button" disabled>Reset</button>
+    <button type="button" id="run_button" disabled>Run</button>
     <table>
         <tr>
             <td>

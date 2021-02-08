@@ -1,5 +1,7 @@
+import { getRandomInt } from './helpers.js';
+
 class CardHandlerUnit {
-    constructor(name, prefix, initialProgram = "", initialInputQueue = []) {
+    constructor(name, prefix, useLocalStorage, initialProgram = "", initialInputQueue = []) {
         // The name displayed above this CHU
         this.name = name;
         // The unique prefix prepended to all HTML elements created by this CHU
@@ -32,6 +34,8 @@ class CardHandlerUnit {
         this.down = null;
         this.left = null;
         this.right = null;
+        // Whether to read from/write to localStore with the program value
+        this.useLocalStorage = useLocalStorage;
         // The program that is loaded if no user data exists in localStore during rendering
         this.initialProgram = initialProgram;
         // Whether this element has drawn UI elements
@@ -90,17 +94,20 @@ class CardHandlerUnit {
         sourceCode.id = this.prefix + CardHandlerUnit.sourceCodeId;
         sourceCode.rows = 10;
         sourceCode.cols = 20;
-        try {
-            var prev = localStorage.getItem(this.prefix);
-            if (prev != null) {
-                sourceCode.value = localStorage.getItem(this.prefix);
-            } else {
-                // Fill in the default program
+        sourceCode.value = this.initialProgram;
+        if (this.useLocalStorage) {
+            try {
+                var prev = localStorage.getItem(this.prefix);
+                if (prev != null) {
+                    sourceCode.value = localStorage.getItem(this.prefix);
+                } else {
+                    // Fill in the default program
+                    sourceCode.value = this.initialProgram;
+                }
+            } catch (err) {
+                // local storage is disabled or absent
                 sourceCode.value = this.initialProgram;
             }
-        } catch (err) {
-            // local storage is disabled or absent
-            sourceCode.value = this.initialProgram;
         }
         wrapper.appendChild(sourceCode);
         var regs = document.createElement('table');
@@ -151,10 +158,12 @@ class CardHandlerUnit {
                 regs.style.visibility = 'visible';
                 this.rawInst = sourceCode.value.split("\n")
                 if (this.parseInstructions()) {
-                    try {
-                        localStorage.setItem(this.prefix, sourceCode.value);
-                    } catch (err) {
-                        // local storage is disabled, continue witout saving
+                    if (this.useLocalStorage) {
+                        try {
+                            localStorage.setItem(this.prefix, sourceCode.value);
+                        } catch (err) {
+                            // local storage is disabled, continue witout saving
+                        }
                     }
                     CardHandlerUnit.addPadding(sourceCode, this.currentLine);
                     this.updateRegisters();
@@ -692,258 +701,4 @@ class CardHandlerUnit {
     }
 }
 
-class BlackjackGame {
-    constructor(controlProgram, program1, program0) {
-    }
-}
-
-class BlackjackGameWithUi {
-
-}
-
-function nextLine() {
-    var success = true;
-    // All units must go through each stage before any advances to the next
-    for (var ch of allCh) {
-        success &= ch.executeStage1();
-    }
-    for (var ch of allCh) {
-        success &= ch.executeStage2();
-    }
-    for (var ch of allCh) {
-        success &= ch.advanceToNextLine();
-    }
-    if (!success) {
-        // Disable the "next" button since we can't advance.  Leave the "reset" button enabled
-        document.getElementById('next_button').disabled = true;
-        document.getElementById('run_button').disabled = true;
-    }
-
-    for (var ch of allCh) {
-        ch.updateRegisters();
-    }
-
-    return success;
-}
-
-function runGame() {
-    while (!gameComplete && nextLine()) {}
-}
-
-function toggleEdit() {
-    editMode = !editMode;
-    var editBtn = document.getElementById('edit_button');
-    var nextBtn = document.getElementById('next_button');
-    var runBtn = document.getElementById('run_button');
-    var resetBtn = document.getElementById('reset_button');
-    if (editMode) {
-        editBtn.innerHTML = 'To Run Mode';
-        nextBtn.disabled = true;
-        runBtn.disabled = true;
-        resetBtn.disabled = true;
-    } else {
-        editBtn.innerHTML = 'To Edit Mode';
-        nextBtn.disabled = false;
-        resetBtn.disabled = false;
-        runBtn.disabled = false;
-    }
-    for (var ch of allCh) {
-        if (!ch.setEditMode(editMode)) {
-            // Transitioning mode failed.  Disable the next and reset buttons until the code is edited
-            nextBtn.disabled = true;
-            resetBtn.disabled = true;
-            runBtn.disabled = true;
-        }
-    }
-    resetDealtCards();
-}
-
-function resetState() {
-    for (var ch of allCh) {
-        ch.reset();
-    }
-    if (!editMode) {
-        document.getElementById('next_button').disabled = false;
-        document.getElementById('run_button').disabled = false;
-    }
-    resetDealtCards();
-}
-
-function resetDealtCards() {
-    dealerCards = [];
-    playerCards = [];
-    updateDealtCards();
-}
-
-function updateDealtCards() {
-    document.getElementById('dealer_cards').value = dealerCards.join(", ");
-    document.getElementById('player_cards').value = playerCards.join(", ");
-    updateBlackjackState();
-}
-
-var gameComplete = false;
-
-function updateBlackjackState() {
-    gameComplete = false;
-
-    var bj = document.getElementById('blackjack_state');
-    if (dealerCards.length == 0) {
-        bj.value = "Waiting for first dealer card";
-        return;
-    }
-    var dealerTotal = CardHandlerUnit.cardValueAdjusted(dealerCards[0])
-    var state = "Dealer face-up: " + dealerCards[0] + "(" + dealerTotal + ")" + "\n";
-    var playerTarget = 17;
-    if (dealerTotal < 7 && dealerTotal > 1) {
-        playerTarget = 12;
-    }
-    state += "Player target: " + playerTarget + "\n"
-
-    if (playerCards.length < 2) {
-        state += "Waiting for initial player cards\n";
-        bj.value = state;
-        return;
-    }
-
-    var softAceCount = 0;
-    var stand = false;
-    var playerTotal = 0;
-
-    // Draw cards for the player
-    for (var i = 0; !stand && i < playerCards.length; i++) {
-        var card = playerCards[i];
-        var cv = CardHandlerUnit.cardValueAdjusted(card)
-        playerTotal += cv
-        if (cv == 1 && playerTotal <= 11) {
-            playerTotal += 10;
-            softAceCount++;
-        }
-
-        while (softAceCount > 0 && playerTotal > 21) {
-            playerTotal -= 10;
-            softAceCount--;
-        }
-        state += "Player draws " + card + " for a total of " + playerTotal;
-        if (softAceCount > 0) {
-            state += " (soft)";
-        }
-        state += "\n";
-
-        if (playerTotal >= playerTarget && (playerTotal >= 18 || softAceCount == 0)) {
-            stand = true;
-            state += (playerTotal > 21 ? "Player busts\n" : "Player stands\n");
-        }
-    }
-
-    if (!stand) {
-        state += "Waiting for more player cards\n";
-        bj.value = state;
-        return;
-    }
-
-    // Draw cards for the dealer
-    stand = false;
-    softAceCount = 0;
-
-    for (var i = 1; !stand && i < dealerCards.length; i++) {
-        var card = dealerCards[i];
-        var cv = CardHandlerUnit.cardValueAdjusted(card)
-        dealerTotal += cv
-        if (cv == 1 && dealerTotal <= 11) {
-            dealerTotal += 10;
-            softAceCount++;
-        }
-
-        while (softAceCount > 0 && dealerTotal > 21) {
-            dealerTotal -= 10;
-            softAceCount--;
-        }
-        state += "Dealer draws " + card + " for a total of " + dealerTotal;
-        if (softAceCount > 0) {
-            state += " (soft)";
-        }
-        state += "\n";
-
-        if (dealerTotal >= 17) {
-            stand = true;
-            state += (dealerTotal > 21 ? "Dealer busts\n" : "Dealer stands\n");
-        }
-    }
-
-    if (!stand) {
-        state += "Waiting for more dealer cards\n";
-        bj.value = state;
-        return;
-    }
-
-    gameComplete = true;
-    if (playerTotal > 21 || (playerTotal < dealerTotal && dealerTotal <= 21)) {
-        state += "Dealer wins\n";
-    } else if (playerTotal == dealerTotal) {
-        state += "Tie\n";
-    } else {
-        state += "Player wins\n";
-    }
-    bj.value = state;
-}
-
-function init() {
-    controlCh.render('control_container');
-    ch1.render('ch1_container');
-    ch2.render('ch2_container');
-}
-
-/* Randomize array in-place using Durstenfeld shuffle algorithm */
-function shuffleArray(array) {
-    for (var i = array.length - 1; i > 0; i--) {
-        var j = getRandomInt(i + 1);
-        var temp = array[i];
-        array[i] = array[j];
-        array[j] = temp;
-    }
-}
-
-function getRandomInt(maxNonInclusive) {
-    return Math.floor(Math.random() * Math.floor(maxNonInclusive));
-}
-
-fullDeck = [
-    "AS", "2S", "3S", "4S", "5S", "6S", "7S", "8S", "9S", "TS", "JS", "QS", "KS",
-    "AH", "2H", "3H", "4H", "5H", "6H", "7H", "8H", "9H", "TH", "JH", "QH", "KH",
-    "AD", "2D", "3D", "4D", "5D", "6D", "7D", "8D", "9D", "TD", "JD", "QD", "KD",
-    "AC", "2C", "3C", "4C", "5C", "6C", "7C", "8C", "9C", "TC", "JC", "QC", "KC",
-];
-
-// TODO: Fabricate a better initial deck.  For now, shuffle
-shuffleArray(fullDeck);
-
-// Create the initial state.  There are 3 CHUs to display on the screen
-var editMode = true;
-var dealerCards = [];
-var playerCards = [];
-var controlCh = new CardHandlerUnit("Control", "control_", "LOOP:\nRRAND\nSEND LEFT\nRRAND\nSEND RIGHT\nJMP LOOP", fullDeck);
-const ch12defaultProgram = "LOOP:\nREAD\nDEAL\nJMP LOOP";
-var ch1 = new CardHandlerUnit("CH1 (Dealer)", "ch1_", ch12defaultProgram);
-var ch2 = new CardHandlerUnit("CH2 (Whale)", "ch2_", ch12defaultProgram);
-var allCh = [ch2, ch1, controlCh];
-
-// Hookup the left/right outputs of each unit
-var appendCh1 = function (card) { ch1.appendCard(card); };
-var appendCh2 = function (card) { ch2.appendCard(card); };
-controlCh.left = appendCh1;
-ch2.left = appendCh1;
-controlCh.right = appendCh2;
-ch1.right = appendCh2;
-
-// Hook up the deal action of each unit
-controlCh.deal = function (card) { alert("Control unit tried to deal card " + card); };
-ch1.deal = function (card) {
-    dealerCards.push(card);
-    updateDealtCards();
-};
-ch2.deal = function (card) {
-    playerCards.push(card);
-    updateDealtCards();
-};
-
-window.onload = init;
+export { CardHandlerUnit };
