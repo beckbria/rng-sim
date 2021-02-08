@@ -408,7 +408,7 @@ class CardHandlerUnit {
     }
 
     static validReadableRegister(regName) {
-        return CardHandlerUnit.validWritableRegister(regName) || regName == "SUIT" || regName == "CVAL" || regName == "CVALB"
+        return CardHandlerUnit.validWritableRegister(regName) || ["SUIT", "CVAL", "CVALB"].includes(regName);
     }
 
     static validReadableOrLiteral(arg) {
@@ -416,7 +416,7 @@ class CardHandlerUnit {
     }
 
     static validOutputRegister(regName) {
-        return regName == "UP" || regName == "LEFT" || regName == "RIGHT" || regName == "DOWN";
+        retur["UP", "LEFT", "RIGHT", "DOWN"].includes(regName);
     }
 
     static isInteger(val) {
