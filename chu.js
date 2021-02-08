@@ -34,6 +34,12 @@ class CardHandlerUnit {
         this.right = null;
         // The program that is loaded if no user data exists in localStore during rendering
         this.initialProgram = initialProgram;
+        // Whether this element has drawn UI elements
+        this.hasUi = false;
+        // The last error encountered
+        this.lastError = "";
+        // The function to call when an error is encountered
+        this.showErrorCallback = function(err) { console.log(err); alert(err); }
     }
 
     // div IDs for the controls.  All will be prefixed with the contents of prefix
@@ -74,6 +80,7 @@ class CardHandlerUnit {
         </table>
     */
     render(containerId) {
+        this.hasUi = true;
         var wrapper = document.getElementById(containerId);
         var title = document.createElement('div');
         title.innerHTML = this.name;
@@ -129,7 +136,7 @@ class CardHandlerUnit {
     }
 
     setEditMode(editMode) {
-        if (editMode != this.editMode) {
+        if (this.hasUi && editMode != this.editMode) {
             this.editMode = editMode;
             var sourceCode = document.getElementById(this.prefix + CardHandlerUnit.sourceCodeId)
             var regs = document.getElementById(this.prefix + CardHandlerUnit.registersId);
@@ -416,7 +423,7 @@ class CardHandlerUnit {
     }
 
     static validOutputRegister(regName) {
-        retur["UP", "LEFT", "RIGHT", "DOWN"].includes(regName);
+        return ["UP", "LEFT", "RIGHT", "DOWN"].includes(regName);
     }
 
     static isInteger(val) {
@@ -557,27 +564,32 @@ class CardHandlerUnit {
         if (lineNum == null) {
             lineNum = this.currentLine;
         }
-        alert(this.name + ": " + err + " at line " + this.lineNum + " (" + this.rawInst[lineNum] + ")");
+        this.lastError = this.name + ": " + err + " at line " + this.lineNum + " (" + this.rawInst[lineNum] + ")";
+        this.showErrorCallback(this.lastError);
     }
 
     resetCursor() {
-        var sourceCode = document.getElementById(this.prefix + CardHandlerUnit.sourceCodeId)
-        CardHandlerUnit.removePadding(sourceCode);
-        CardHandlerUnit.addPadding(sourceCode, this.currentLine);
-        CardHandlerUnit.scrollToLine(sourceCode, this.currentLine);
+        if (this.hasUi) {
+            var sourceCode = document.getElementById(this.prefix + CardHandlerUnit.sourceCodeId)
+            CardHandlerUnit.removePadding(sourceCode);
+            CardHandlerUnit.addPadding(sourceCode, this.currentLine);
+            CardHandlerUnit.scrollToLine(sourceCode, this.currentLine);
+        }
     }
 
     /** updateRegisters updates the UI for the state of the CHU */
     updateRegisters() {
-        document.getElementById(this.prefix + CardHandlerUnit.cvalId).value = this.cval();
-        document.getElementById(this.prefix + CardHandlerUnit.cvalbId).value = this.cvalb();
-        document.getElementById(this.prefix + CardHandlerUnit.suitId).value = this.suit();
-        document.getElementById(this.prefix + CardHandlerUnit.r0Id).value = this.reg[0];
-        document.getElementById(this.prefix + CardHandlerUnit.r1Id).value = this.reg[1];
-        document.getElementById(this.prefix + CardHandlerUnit.r2Id).value = this.reg[2];
-        document.getElementById(this.prefix + CardHandlerUnit.r3Id).value = this.reg[3];
-        document.getElementById(this.prefix + CardHandlerUnit.r4Id).value = this.reg[4];
-        document.getElementById(this.prefix + CardHandlerUnit.inputQueueId).value = this.inputQueue.join(" ");
+        if (this.hasUi) {
+            document.getElementById(this.prefix + CardHandlerUnit.cvalId).value = this.cval();
+            document.getElementById(this.prefix + CardHandlerUnit.cvalbId).value = this.cvalb();
+            document.getElementById(this.prefix + CardHandlerUnit.suitId).value = this.suit();
+            document.getElementById(this.prefix + CardHandlerUnit.r0Id).value = this.reg[0];
+            document.getElementById(this.prefix + CardHandlerUnit.r1Id).value = this.reg[1];
+            document.getElementById(this.prefix + CardHandlerUnit.r2Id).value = this.reg[2];
+            document.getElementById(this.prefix + CardHandlerUnit.r3Id).value = this.reg[3];
+            document.getElementById(this.prefix + CardHandlerUnit.r4Id).value = this.reg[4];
+            document.getElementById(this.prefix + CardHandlerUnit.inputQueueId).value = this.inputQueue.join(" ");
+        }
     }
 
     cval() {
@@ -678,6 +690,15 @@ class CardHandlerUnit {
         const lineHeight = textarea.scrollHeight / numLines;
         textarea.scrollTop = line * lineHeight;
     }
+}
+
+class BlackjackGame {
+    constructor(controlProgram, program1, program0) {
+    }
+}
+
+class BlackjackGameWithUi {
+
 }
 
 function nextLine() {
