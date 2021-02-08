@@ -202,10 +202,8 @@ class BlackjackGameWithUi extends BlackjackGame {
         const ch12defaultProgram = "LOOP:\nREAD\nDEAL\nJMP LOOP";
         super(
             true, // Try to load previous program from local state
-            // Control Program
-            "LOOP:\nRRAND\nSEND LEFT\nRRAND\nSEND RIGHT\nJMP LOOP",
-            ch12defaultProgram, ch12defaultProgram
-        );
+            "LOOP:\nRRAND\nSEND LEFT\nRRAND\nSEND RIGHT\nJMP LOOP", // Control Program
+            ch12defaultProgram, ch12defaultProgram);
         this.controlCh.deal = function (card) { alert("Control unit tried to deal card " + card); };
     }
 
@@ -213,18 +211,21 @@ class BlackjackGameWithUi extends BlackjackGame {
         this.controlCh.render('control_container');
         this.ch1.render('ch1_container');
         this.ch2.render('ch2_container');
+        this.attachOnClick();
+    }
 
+    attachOnClick() {
         var that = this;
         document.getElementById('edit_button').onclick = function () { that.toggleEdit(); };
         document.getElementById('next_button').onclick = function () { that.nextLine(); };
         document.getElementById('run_button').onclick = function () { that.runGame(); };
         document.getElementById('reset_button').onclick = function () { that.resetState(); };
+        document.getElementById('validate_button').onclick = function () { that.validate(); };
     }
 
     resetState() {
         if (!this.editMode) {
-            document.getElementById('next_button').disabled = false;
-            document.getElementById('run_button').disabled = false;
+            this.disableStepButtons(false);
         }
         super.resetState();
     }
@@ -236,39 +237,40 @@ class BlackjackGameWithUi extends BlackjackGame {
     }
 
     nextLine() {
-        var success = super.nextLine();
+        const success = super.nextLine();
         if (!success) {
             // Disable the "next" button since we can't advance.  Leave the "reset" button enabled
-            document.getElementById('next_button').disabled = true;
-            document.getElementById('run_button').disabled = true;
+            this.disableStepButtons(true);
         }
 
         return success;
     }
 
+    disableStepButtons(disabled) {
+        const stepButtons = ['next_button', 'run_button', 'validate_button'].map(function(id) { return document.getElementById(id); });
+        for (const b of stepButtons) {
+            b.disabled = disabled;
+        }
+    }
+
     toggleEdit() {
         super.toggleEdit();
-        var editBtn = document.getElementById('edit_button');
-        var nextBtn = document.getElementById('next_button');
-        var runBtn = document.getElementById('run_button');
-        var resetBtn = document.getElementById('reset_button');
+        const editBtn = document.getElementById('edit_button');
+        const resetBtn = document.getElementById('reset_button');
         if (this.editMode) {
             editBtn.innerHTML = 'To Run Mode';
-            nextBtn.disabled = true;
-            runBtn.disabled = true;
             resetBtn.disabled = true;
+            this.disableStepButtons(true);
         } else {
             editBtn.innerHTML = 'To Edit Mode';
-            nextBtn.disabled = false;
             resetBtn.disabled = false;
-            runBtn.disabled = false;
+            this.disableStepButtons(false);
         }
         for (var ch of this.allCh) {
             if (!ch.setEditMode(this.editMode)) {
                 // Transitioning mode failed.  Disable the next and reset buttons until the code is edited
-                nextBtn.disabled = true;
                 resetBtn.disabled = true;
-                runBtn.disabled = true;
+                this.disableStepButtons(true);
             }
         }
     }
@@ -276,6 +278,11 @@ class BlackjackGameWithUi extends BlackjackGame {
     updateBlackjackState() {
         super.updateBlackjackState();
         document.getElementById('blackjack_state').value = this.bjState;
+    }
+
+    validate() {
+        // TODO: Extract code, create N UI-less blackjack games, run them and see if they succeeded and what the results were 
+        alert("Validation TODO");
     }
 }
 
