@@ -130,7 +130,8 @@ class BlackjackGame {
             playerTotal: this.playerTotal,
             controlError: this.controlCh.lastError,
             ch1Error: this.ch1.lastError,
-            ch2Error: this.ch2.lastError
+            ch2Error: this.ch2.lastError,
+            winner: this.winner(),
         };
     }
 
@@ -224,12 +225,27 @@ class BlackjackGame {
         }
     
         this.gameComplete = true;
+        switch (this.winner()) {
+            case -1:
+                this.bjState += "Dealer wins\n";
+                break;
+            case 0:
+                this.bjState += "Tie\n";
+                break;
+            case 1:
+                this.bjState += "Player wins\n";
+                break;
+        }
+    }
+
+    /** Returns -1 if dealer won, 0 for tie, 1 if player won */
+    winner() {
         if (this.playerTotal > 21 || (this.playerTotal < this.dealerTotal && this.dealerTotal <= 21)) {
-            this.bjState += "Dealer wins\n";
+            return -1;
         } else if (this.playerTotal == this.dealerTotal) {
-            this.bjState += "Tie\n";
+            return 0;
         } else {
-            this.bjState += "Player wins\n";
+            return 1;
         }
     }
 }
