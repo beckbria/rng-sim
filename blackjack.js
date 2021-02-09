@@ -74,8 +74,19 @@ class BlackjackGame {
     }
 
     toggleEdit() {
-        this.editMode = !this.editMode;
-        this.resetDealtCards();
+        return this.setEditMode(!this.editMode);
+    }
+
+    setEditMode(edit) {
+        let success = true;
+        if (edit != this.editMode) {
+            this.editMode = edit;
+            this.resetDealtCards();
+            for (var ch of this.allCh) {
+                success &= ch.setEditMode(this.editMode);
+            }
+        }
+        return success;
     }
 
     resetState() {
@@ -269,6 +280,7 @@ class BlackjackGameWithUi extends BlackjackGame {
         } else if (this.gameComplete) {
             document.getElementById('validate_button').disabled = false;
             document.getElementById('next_button').disabled = true;
+            document.getElementById('run_button').disabled = true;
         }
 
         return success;
@@ -282,7 +294,7 @@ class BlackjackGameWithUi extends BlackjackGame {
     }
 
     toggleEdit() {
-        super.toggleEdit();
+        const success = super.toggleEdit();
         const editBtn = document.getElementById('edit_button');
         const resetBtn = document.getElementById('reset_button');
         if (this.editMode) {
@@ -294,12 +306,10 @@ class BlackjackGameWithUi extends BlackjackGame {
             resetBtn.disabled = false;
             this.disableStepButtons(false);
         }
-        for (var ch of this.allCh) {
-            if (!ch.setEditMode(this.editMode)) {
-                // Transitioning mode failed.  Disable the next and reset buttons until the code is edited
-                resetBtn.disabled = true;
-                this.disableStepButtons(true);
-            }
+        if (!success) {
+            // Transitioning mode failed.  Disable the next and reset buttons until the code is edited
+            resetBtn.disabled = true;
+            this.disableStepButtons(true);
         }
         document.getElementById('validate_button').disabled = true;
     }

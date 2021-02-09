@@ -176,6 +176,7 @@ class CardHandlerUnit {
                     }
                 }
             } else { // No UI (headless mode)
+                console.log("Edit Mode: " + this.editMode);
                 if (this.editMode) {
                     this.reset();
                 } else {
@@ -184,6 +185,7 @@ class CardHandlerUnit {
                     if (this.parseInstructions()) {
                         this.updateRegisters();
                     } else {
+                        console.log(this.rawInst);
                         return false;
                     }
                 }

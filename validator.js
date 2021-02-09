@@ -7,6 +7,7 @@ function Validate(state) {
     const gameState = [];
     for (let i = 0; i < iterations; i++) {
         const game = new BlackjackGame(false, state.control, state.ch1, state.ch2);
+        game.toggleEdit();
         game.runGame();
         gameState.push(game.gameState());
     }
