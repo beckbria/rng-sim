@@ -143,38 +143,66 @@ class CardHandlerUnit {
     }
 
     setEditMode(editMode) {
-        if (this.hasUi && editMode != this.editMode) {
+        if (editMode != this.editMode) {
             this.editMode = editMode;
-            var sourceCode = document.getElementById(this.prefix + CardHandlerUnit.sourceCodeId)
-            var regs = document.getElementById(this.prefix + CardHandlerUnit.registersId);
-            if (this.editMode) {
-                sourceCode.readOnly = false;
-                regs.style.visibility = 'collapse';
-                this.reset();
-                sourceCode.value = this.rawInst.join("\n")
-                CardHandlerUnit.scrollToLine(sourceCode, this.currentLine);
-            } else {
-                sourceCode.readOnly = true;
-                regs.style.visibility = 'visible';
-                this.rawInst = sourceCode.value.split("\n")
-                if (this.parseInstructions()) {
-                    if (this.useLocalStorage) {
-                        try {
-                            localStorage.setItem(this.prefix, sourceCode.value);
-                        } catch (err) {
-                            // local storage is disabled, continue witout saving
+
+            if (this.hasUi) {
+                var sourceCode = document.getElementById(this.prefix + CardHandlerUnit.sourceCodeId);
+                var regs = document.getElementById(this.prefix + CardHandlerUnit.registersId);
+                if (this.editMode) {
+                    sourceCode.readOnly = false;
+                    regs.style.visibility = 'collapse';
+                    this.reset();
+                    sourceCode.value = this.rawInst.join("\n")
+                    CardHandlerUnit.scrollToLine(sourceCode, this.currentLine);
+                } else {    // Has UI, not in edit mode
+                    sourceCode.readOnly = true;
+                    regs.style.visibility = 'visible';
+                    this.rawInst = sourceCode.value.split("\n")
+                    if (this.parseInstructions()) {
+                        if (this.useLocalStorage) {
+                            try {
+                                localStorage.setItem(this.prefix, sourceCode.value);
+                            } catch (err) {
+                                // local storage is disabled, continue witout saving
+                            }
                         }
+                        CardHandlerUnit.addPadding(sourceCode, this.currentLine);
+                        this.updateRegisters();
+                    } else {
+                        // Errors should have been raised as alerts for now.  Disable the next and reset buttons
+                        // until the code is edited
+                        return false;
                     }
-                    CardHandlerUnit.addPadding(sourceCode, this.currentLine);
-                    this.updateRegisters();
+                }
+            } else { // No UI (headless mode)
+                if (this.editMode) {
+                    this.reset();
                 } else {
-                    // Errors should have been raised as alerts for now.  Disable the next and reset buttons
-                    // until the code is edited
-                    return false;
+                    // Use the initial program
+                    this.rawInst = this.initialProgram.split("\n");
+                    if (this.parseInstructions()) {
+                        this.updateRegisters();
+                    } else {
+                        return false;
+                    }
                 }
             }
         }
         return true;
+    }
+
+    /** Extract the current program */
+    program() {
+        if (this.hasUi) {
+            if (this.editMode) {
+                return document.getElementById(this.prefix + CardHandlerUnit.sourceCodeId).value;
+            } else {
+                return this.rawInst.join("\n");
+            }
+        } else {
+            return this.initialProgram;
+        }
     }
 
     /** 

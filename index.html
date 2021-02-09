@@ -6,8 +6,21 @@
     <title>ACD-2 Card Dealing Unit</title>
     <script type="module">
         import { BlackjackGameWithUi } from "./blackjack.js";
+        import { Validate } from './validator.js';
         var game = new BlackjackGameWithUi();
-        window.onload = function () { game.render(); };
+        function validateGame() {
+            const outcome = Validate(game.chuState());
+            if (outcome.success) {
+                alert("Congratulations! " + outcome.msg);
+            } else {
+                alert(outcome.msg);
+            }
+        }
+
+        window.onload = function () { 
+            document.getElementById('validate_button').onclick = validateGame;
+            game.render(); 
+        };
     </script>
 </head>
 

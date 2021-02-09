@@ -91,10 +91,36 @@ class BlackjackGame {
         this.updateDealtCards();
     }
     
-    // Updates the UI for what cards have been dealt.  Overridden by child classes,
-    // so intentionally separate from updateBlackjackState
+    /** 
+     * Updates the UI for what cards have been dealt.  Overridden by child classes,
+     * so intentionally separate from updateBlackjackState
+     */
     updateDealtCards() {
         this.updateBlackjackState();
+    }
+
+    /** Returns the programs for each CHU as an object */
+    chuState() {
+        return {
+            control: this.controlCh.program(),
+            ch1: this.ch1.program(),
+            ch2: this.ch2.program()
+        };
+    }
+
+    /** Returns the state of the blackjack game */
+    gameState() {
+        return {
+            complete: this.gameComplete,
+            dealerCards: this.dealerCards,
+            playerCards: this.playerCards,
+            bjState: this.bjState,
+            dealerTotal: this.dealerTotal,
+            playerTotal: this.playerTotal,
+            controlError: this.controlCh.lastError,
+            ch1Error: this.ch1.lastError,
+            ch2Error: this.ch2.lastError
+        };
     }
 
     updateBlackjackState() {
@@ -220,7 +246,6 @@ class BlackjackGameWithUi extends BlackjackGame {
         document.getElementById('next_button').onclick = function () { that.nextLine(); };
         document.getElementById('run_button').onclick = function () { that.runGame(); };
         document.getElementById('reset_button').onclick = function () { that.resetState(); };
-        document.getElementById('validate_button').onclick = function () { that.validate(); };
     }
 
     resetState() {
@@ -241,13 +266,16 @@ class BlackjackGameWithUi extends BlackjackGame {
         if (!success) {
             // Disable the "next" button since we can't advance.  Leave the "reset" button enabled
             this.disableStepButtons(true);
+        } else if (this.gameComplete) {
+            document.getElementById('validate_button').disabled = false;
+            document.getElementById('next_button').disabled = true;
         }
 
         return success;
     }
 
     disableStepButtons(disabled) {
-        const stepButtons = ['next_button', 'run_button', 'validate_button'].map(function(id) { return document.getElementById(id); });
+        const stepButtons = ['next_button', 'run_button'].map(function(id) { return document.getElementById(id); });
         for (const b of stepButtons) {
             b.disabled = disabled;
         }
@@ -273,16 +301,12 @@ class BlackjackGameWithUi extends BlackjackGame {
                 this.disableStepButtons(true);
             }
         }
+        document.getElementById('validate_button').disabled = true;
     }
 
     updateBlackjackState() {
         super.updateBlackjackState();
         document.getElementById('blackjack_state').value = this.bjState;
-    }
-
-    validate() {
-        // TODO: Extract code, create N UI-less blackjack games, run them and see if they succeeded and what the results were 
-        alert("Validation TODO");
     }
 }
 
