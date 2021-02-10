@@ -1,8 +1,17 @@
 import { BlackjackGame } from "./blackjack.js";
 import { CardHandlerUnit } from "./chu.js";
 
+function isLocalHost() {
+    return (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+}
+
+let debugMode = isLocalHost();
+
 function createFailure(msg, gameState = null) {
-    const context = gameState == null ? "" : "\n\nExecution log:\n" + gameState.bjState + "\n\nInitial Deck:\n" + gameState.deck;
+    let context = gameState == null ? "" : "\n\nExecution log:\n" + gameState.bjState + "\n\nInitial Deck:\n" + gameState.deck;
+    if (debugMode && gameState != null) {
+        context += "\n\n" + JSON.stringify(gameState);
+    }
 
     return {
         success: false,
@@ -61,17 +70,19 @@ function Validate(programs) {
         }
     }
 
+    const gameContext = debugMode ? first : null
+
     if (!foundDifferentDealerCard) {
-        return createFailure("The dealer's shown card always had a value of " + CardHandlerUnit.cardValueAdjusted(first.dealerCards[0]));
+        return createFailure("The dealer's shown card always had a value of " + CardHandlerUnit.cardValueAdjusted(first.dealerCards[0]), gameContext);
     }
     if (!foundDifferentDealerScore) {
-        return createFailure("The dealer's total was always " + first.dealerTotal);
+        return createFailure("The dealer's total was always " + first.dealerTotal, gameContext);
     }
     if (!foundDifferentPlayerScore) {
-        return createFailure("The dealer's total was always " + first.playerTotal);
+        return createFailure("The player's total was always " + first.playerTotal, gameContext);
     }
     if (!foundDealerDidNotBust) {
-        return createFailure("The dealer always busted");
+        return createFailure("The dealer always busted", gameContext);
     }
 
     // At this point all the validation tests have passed, but we still have to check if the player always wins

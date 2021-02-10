@@ -1,0 +1,26 @@
+*****************************************************
+Swapping program that always deals 9s to the player:
+*****************************************************
+
+// Control
+LOOP:
+RRAND
+SEND RIGHT
+JMP LOOP
+
+// CH1
+LOOP:
+READ
+DEAL
+JMP LOOP
+
+// CH2
+LOOP:
+READ
+SUB CVALB 9 R0
+JE R0 0 GOOD
+SEND LEFT
+JMP LOOP
+GOOD:
+DEAL
+JMP LOOP

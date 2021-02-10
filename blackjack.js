@@ -147,6 +147,7 @@ class BlackjackGame {
             ch2Error: this.ch2.lastError,
             winner: BlackjackGame.winner(this.playerTotal, this.dealerTotal),
             deck: [...this.controlCh.initialInputQueue],
+            programCounter: this.programCounter,
         };
     }
 
