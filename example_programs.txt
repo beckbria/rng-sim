@@ -55,15 +55,16 @@ CH1
 
 LOOP:
 READ
+
+# Add it to our 
+# score
+ADD R4 CVALB R4
+
 # Aces are 
 # dangerous, so
 # always pass them
 SUB CVAL 1 R0
 JE R0 0 RECYCLE
-
-# Add it to our 
-# score
-ADD R4 CVALB R4
 
 # If score is less 
 # than 18, deal the 

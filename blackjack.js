@@ -301,7 +301,7 @@ class BlackjackGameWithUi extends BlackjackGame {
         const ch12defaultProgram = "LOOP:\nREAD\nDEAL\nJMP LOOP";
         super(
             true, // Try to load previous program from local state
-            "LOOP:\nRRAND\nSEND LEFT\nRRAND\nSEND RIGHT\nJMP LOOP", // Control Program
+            "LOOP:\nREAD\nSEND LEFT\nREAD\nSEND RIGHT\nJMP LOOP", // Control Program
             ch12defaultProgram, ch12defaultProgram);
         this.controlCh.deal = function (card) { alert("Control unit tried to deal card " + card); };
     }
