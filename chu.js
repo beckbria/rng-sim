@@ -1,4 +1,6 @@
-import { getRandomInt } from './helpers.js';
+import { getRandomInt, isLocalHost } from './helpers.js';
+
+var debugMode = isLocalHost();
 
 class CardHandlerUnit {
     constructor(name, prefix, useLocalStorage, initialProgram = "", initialInputQueue = []) {
@@ -240,6 +242,9 @@ class CardHandlerUnit {
                     cardToTake = getRandomInt(this.inputQueue.length);
                 }
                 this.card = this.inputQueue[cardToTake];
+                if (debugMode) {
+                    console.log("CH: " + this.name + " read card '" + this.card + "' from index " + cardToTake);
+                }
                 this.inputQueue.splice(cardToTake, 1);
                 break;
 
@@ -248,7 +253,14 @@ class CardHandlerUnit {
                     this.showError("Attempted to deal but no deal output");
                     return false;
                 }
+                if (this.card == "") {
+                    this.showError("Attempted to send a card when no card held");
+                    return false;
+                }
                 this.deal(this.card);
+                if (debugMode) {
+                    console.log("CH: " + this.name + " dealing '" + this.card);
+                }
                 this.card = "";
                 break;
 
@@ -316,6 +328,10 @@ class CardHandlerUnit {
     executeStage2() {
         const instr = this.inst[this.currentLine];
         if (instr[0] == "SEND") {
+            if (this.card == "") {
+                this.showError("Attempted to send a card when no card held");
+                return false;
+            }
             var dest = null;
             switch (instr[1]) {
                 case "LEFT":
@@ -340,6 +356,9 @@ class CardHandlerUnit {
                 return false;
             }
             dest(this.card);
+            if (debugMode) {
+                console.log("CH: " + this.name + " sending '" + this.card + "' to direction " + instr[1]);
+            }
             this.card = "";
         }
         return true;

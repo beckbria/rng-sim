@@ -1,11 +1,8 @@
 import { BlackjackGame } from "./blackjack.js";
 import { CardHandlerUnit } from "./chu.js";
+import { isLocalHost } from "./helpers.js";
 
-function isLocalHost() {
-    return (location.hostname === "localhost" || location.hostname === "127.0.0.1")
-}
-
-let debugMode = isLocalHost();
+var debugMode = isLocalHost();
 
 function createFailure(msg, gameState = null) {
     let context = gameState == null ? "" : "\n\nExecution log:\n" + gameState.bjState + "\n\nInitial Deck:\n" + gameState.deck;

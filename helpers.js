@@ -12,4 +12,8 @@ function getRandomInt(maxNonInclusive) {
     return Math.floor(Math.random() * Math.floor(maxNonInclusive));
 }
 
-export { shuffleArray, getRandomInt };
+function isLocalHost() {
+    return (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+}
+
+export { shuffleArray, getRandomInt, isLocalHost };
