@@ -502,12 +502,20 @@ class CardHandlerUnit {
 
     /** Parse a single instruction */
     parseInst(line, lineNum) {
-        var tokens = line.trim().toUpperCase().split(" ");
+        let tokens = line.trim().toUpperCase().split(" ");
 
         const tooManyError = "Too many arguments";
         const tooFewError = "Insufficient arguments";
 
-        switch (tokens[0]) {
+        // Detect comments
+        let command = tokens[0];
+        if (command.length >= 1 && command.substr(0, 1) == "#") {
+            // Treat a comment as a blank line
+            tokens = [""];
+            command = "";
+        }
+
+        switch (command) {
             case "":
             case "READ":
             case "RRAND":
