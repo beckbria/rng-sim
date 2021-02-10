@@ -46,6 +46,8 @@ class CardHandlerUnit {
         this.lastError = "";
         // The function to call when an error is encountered
         this.showErrorCallback = function(err) { console.log(err); alert(err); }
+        // Set to true if this unit is currently waiting to read input from an empty input queue
+        this.waitingForRead = false;
     }
 
     // div IDs for the controls.  All will be prefixed with the contents of prefix
@@ -218,6 +220,7 @@ class CardHandlerUnit {
      */
     executeStage1() {
         const instr = this.inst[this.currentLine];
+        this.waitingForRead = false;
 
         switch (instr[0]) {
             case "":
@@ -234,6 +237,7 @@ class CardHandlerUnit {
                 }
                 if (this.inputQueue.length == 0) {
                     this.nextLine = this.currentLine;
+                    this.waitingForRead = true;
                     return true;
                 }
                 var cardToTake = 0;

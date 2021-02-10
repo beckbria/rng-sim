@@ -82,6 +82,15 @@ class BlackjackGame {
         for (var ch of this.allCh) {
             ch.updateRegisters();
         }
+
+        let allUnitsBlocked = true;
+        for (const ch of this.allCh) {
+            allUnitsBlocked &= ch.waitingForRead; 
+        }
+        if (allUnitsBlocked) {
+            this.controlCh.showError("Deadlock: All units waiting to read from empty queue");
+            return false;
+        }
     
         return success;
     }
