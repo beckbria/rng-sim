@@ -2,19 +2,25 @@
 Swapping program that always deals 9s to the player:
 *****************************************************
 
-// Control
+///////////////////////////////////////////////////
+Control
+///////////////////////////////////////////////////
 LOOP:
 RRAND
 SEND RIGHT
 JMP LOOP
 
-// CH1
+///////////////////////////////////////////////////
+CH1
+///////////////////////////////////////////////////
 LOOP:
 READ
 DEAL
 JMP LOOP
 
-// CH2
+///////////////////////////////////////////////////
+CH2
+///////////////////////////////////////////////////
 LOOP:
 READ
 SUB CVALB 9 R0
@@ -22,5 +28,100 @@ JE R0 0 GOOD
 SEND LEFT
 JMP LOOP
 GOOD:
+DEAL
+JMP LOOP
+
+*****************************************************
+Swapping program that passes validation:
+*****************************************************
+
+///////////////////////////////////////////////////
+Control
+///////////////////////////////////////////////////
+LOOP:
+# Send all cards to 
+# the right unit for 
+# initial processing
+RRAND
+SEND RIGHT
+JMP LOOP
+
+///////////////////////////////////////////////////
+CH1
+///////////////////////////////////////////////////
+# Keep track of our 
+# score in R4.  Aim 
+# for 17 or 22+
+
+LOOP:
+READ
+# Aces are 
+# dangerous, so
+# always pass them
+SUB CVAL 1 R0
+JE R0 0 RECYCLE
+
+# Add it to our 
+# score
+ADD R4 CVALB R4
+
+# If score is less 
+# than 18, deal the 
+# card
+SUB R4 18 R0
+JLT R0 0 KEEP
+
+# If score is 
+# greater than 21, 
+# deal
+SUB R4 22 R0
+JGE R0 0 KEEP
+
+# Otherwise, send 
+# the card back to 
+# be reprocessed
+RECYCLE:
+# We didn't keep 
+# this card, so
+# remove it from 
+# our total
+SUB R4 CVALB R4
+SEND RIGHT
+JMP LOOP
+
+KEEP:
+DEAL
+JMP LOOP
+
+
+///////////////////////////////////////////////////
+CH2
+///////////////////////////////////////////////////
+LOOP:
+READ
+
+# If our score is
+# 18 or higher,
+# pass everything
+SUB R4 18 R0
+JGE R0 0 PASS
+
+# Look for a 9 or 
+# higher. This 
+# ensures we always 
+# get 18, 19, or 20
+SUB CVALB 9 R0
+JGE R0 0 KEEP
+
+# Otherwise pass 
+# all cards to the 
+# left
+PASS:
+SEND LEFT
+JMP LOOP
+
+KEEP:
+# Track our score
+ADD R4 CVALB R4
 DEAL
 JMP LOOP

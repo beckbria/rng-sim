@@ -9,6 +9,7 @@
         import { Validate } from './validator.js';
         var game = new BlackjackGameWithUi();
         function validateGame() {
+            document.getElementById('validation_state').value = '';
             const outcome = Validate(game.chuState());
             if (outcome.success) {
                 alert("Congratulations! " + outcome.msg);
