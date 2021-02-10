@@ -294,6 +294,7 @@ class BlackjackGameWithUi extends BlackjackGame {
         if (!this.editMode) {
             this.disableStepButtons(false);
         }
+        document.getElementById('validation_state_wrapper').style.visibility = 'collapse';
         super.resetState();
     }
 

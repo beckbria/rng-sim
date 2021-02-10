@@ -12,9 +12,9 @@
             const outcome = Validate(game.chuState());
             if (outcome.success) {
                 alert("Congratulations! " + outcome.msg);
-            } else {
-                alert(outcome.msg);
-            }
+            } 
+            document.getElementById('validation_state').value = outcome.msg;
+            document.getElementById('validation_state_wrapper').style.visibility = 'visible';
         }
 
         window.onload = function () { 
@@ -47,7 +47,6 @@
           |
           |
           |
-          |
           v</pre>
             </td>
             <td id="control_container"></td>
@@ -60,7 +59,16 @@
              |
              |
              |
+             |
+             |
+             |
              v</pre>
+            </td>
+            <td rowspan="2">
+                <div id="validation_state_wrapper" style="visibility:collapse;">
+                    Validation Results:<br>
+                    <textarea id="validation_state" readonly rows="30" cols="40" ></textarea>
+                </div>
             </td>
         </tr>
         <tr>
