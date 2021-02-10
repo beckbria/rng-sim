@@ -137,6 +137,7 @@ class CardHandlerUnit {
         this.card = "";
         this.reg = [0, 0, 0, 0, 0]
         this.inputQueue = [...this.initialInputQueue];
+        this.lastError = "";
         this.advanceToNextNonLabel();
         this.resetCursor();
         this.updateRegisters();

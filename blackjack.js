@@ -28,6 +28,9 @@ class BlackjackGame {
         this.playerTotal = 0;
         this.dealerTotal = 0;
 
+        // Track the number of instructions executed as a primitive attempt to detect infinite loops
+        this.programCounter = 0;
+
         // Hook up the left/right outputs of each unit
         var that = this;
         var appendCh1 = function (card) { that.ch1.appendCard(card); };
@@ -54,6 +57,16 @@ class BlackjackGame {
     }
 
     nextLine() {
+        this.programCounter++;
+        if (this.programCounter > 10000) {
+            // Realistically no program should need more than 100, perhaps 1000 instructions
+            // to deal a hand of blackjack.  If we get 10000, assume that we're stuck in a
+            // loop.
+            // TODO: Consider better loop detection.  Or not.
+            this.controlCh.showError("Infinite loop detected");
+            return false;
+        }
+
         var success = true;
         // All units must go through each stage before any advances to the next
         for (var ch of this.allCh) {
@@ -94,6 +107,7 @@ class BlackjackGame {
             ch.reset();
         }
         this.resetDealtCards();
+        this.programCounter = 0;
     }
     
     resetDealtCards() {
@@ -131,7 +145,8 @@ class BlackjackGame {
             controlError: this.controlCh.lastError,
             ch1Error: this.ch1.lastError,
             ch2Error: this.ch2.lastError,
-            winner: this.winner(),
+            winner: BlackjackGame.winner(this.playerTotal, this.dealerTotal),
+            deck: [...this.controlCh.initialInputQueue],
         };
     }
 
@@ -225,7 +240,7 @@ class BlackjackGame {
         }
     
         this.gameComplete = true;
-        switch (this.winner()) {
+        switch (BlackjackGame.winner(this.playerTotal, this.dealerTotal)) {
             case -1:
                 this.bjState += "Dealer wins\n";
                 break;
@@ -239,10 +254,10 @@ class BlackjackGame {
     }
 
     /** Returns -1 if dealer won, 0 for tie, 1 if player won */
-    winner() {
-        if (this.playerTotal > 21 || (this.playerTotal < this.dealerTotal && this.dealerTotal <= 21)) {
+    static winner(playerTotal, dealerTotal) {
+        if (playerTotal > 21 || (playerTotal < dealerTotal && dealerTotal <= 21)) {
             return -1;
-        } else if (this.playerTotal == this.dealerTotal) {
+        } else if (playerTotal == dealerTotal) {
             return 0;
         } else {
             return 1;
