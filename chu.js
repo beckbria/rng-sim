@@ -29,8 +29,8 @@ class CardHandlerUnit {
         this.inputQueue = [...initialInputQueue];
         // A copy of the initial contents for reset purposes
         this.initialInputQueue = [...initialInputQueue];
-        // Callback that takes a card when it is dealt
-        this.deal = null;
+        // Callback that takes a card when it is kept
+        this.keep = null;
         // Callbacks that take a card function and add it to the input queue in that direction
         this.up = null;
         this.down = null;
@@ -250,18 +250,18 @@ class CardHandlerUnit {
                 this.inputQueue.splice(cardToTake, 1);
                 break;
 
-            case "DEAL":
-                if (this.deal == null) {
-                    this.showError("Attempted to deal but no deal output");
+            case "KEEP":
+                if (this.keep == null) {
+                    this.showError("Attempted to keep but no keep output");
                     return false;
                 }
                 if (this.card == "") {
                     this.showError("Attempted to send a card when no card held");
                     return false;
                 }
-                this.deal(this.card);
+                this.keep(this.card);
                 if (debugMode) {
-                    console.log("CH: " + this.name + " dealing '" + this.card);
+                    console.log("CH: " + this.name + " keeping '" + this.card);
                 }
                 this.card = "";
                 break;
@@ -493,7 +493,7 @@ class CardHandlerUnit {
 
     /** Words that are not allowed to be labels */
     static validLabelName(label) {
-        const reserved = ["READ", "RRAND", "DEAL", "SEND", "ADD", "SUB", "NEG", "JMP", "JZ", "JNZ", "JGZ", "NOP"];
+        const reserved = ["READ", "RRAND", "KEEP", "SEND", "ADD", "SUB", "NEG", "JMP", "JZ", "JNZ", "JGZ", "NOP"];
         if (reserved.includes(label)) {
             return false;
         }
@@ -521,7 +521,7 @@ class CardHandlerUnit {
             case "":
             case "READ":
             case "RRAND":
-            case "DEAL":
+            case "KEEP":
             case "NOP":
                 if (tokens.length != 1) {
                     this.showError(tooManyError, lineNum);
@@ -633,7 +633,7 @@ class CardHandlerUnit {
         if (lineNum == null) {
             lineNum = this.currentLine;
         }
-        this.lastError = this.name + ": " + err + " at line " + this.lineNum + " (" + this.rawInst[lineNum] + ")";
+        this.lastError = this.name + ": " + err + " at line " + lineNum + " (" + this.rawInst[lineNum] + ")";
         this.showErrorCallback(this.lastError);
     }
 
@@ -644,6 +644,12 @@ class CardHandlerUnit {
             CardHandlerUnit.addPadding(sourceCode, this.currentLine);
             CardHandlerUnit.scrollToLine(sourceCode, this.currentLine);
         }
+    }
+
+    resetToStockProgram() {
+       if (this.hasUi) {
+            document.getElementById(this.prefix + CardHandlerUnit.sourceCodeId).value = this.initialProgram;
+       } 
     }
 
     /** updateRegisters updates the UI for the state of the CHU */

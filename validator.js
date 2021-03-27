@@ -79,7 +79,8 @@ function Validate(programs) {
         return createFailure("The player's total was always " + first.playerTotal, gameContext);
     }
     if (!foundDealerDidNotBust) {
-        return createFailure("The dealer always busted", gameContext);
+        // Disabled this check for beta
+        //return createFailure("The dealer always busted", gameContext);
     }
 
     // At this point all the validation tests have passed, but we still have to check if the player always wins
@@ -89,8 +90,8 @@ function Validate(programs) {
 
     // TODO: If validation succeeds, call a REST API to validate the code and fetch the puzzle answer.
     // WARNING: Puzzle answer below.  Don't spoil yourself.  For that matter why are you reading the
-    // source code?  Stop that.
-    return createSuccess("PuzzleAnswerGoesHere")
+    // source code?  Stop that.  This will be moved server-side before the real event.
+    return createSuccess(atob('R0lCU09O'))
 }
 
 export { Validate };

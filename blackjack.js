@@ -23,7 +23,7 @@ class BlackjackGame {
         this.playerCards = [];
         this.controlCh = new CardHandlerUnit("Control", "control_", useLocalStorage, controlProgram, fullDeck);
         this.ch1 = new CardHandlerUnit("CH1 (Dealer)", "ch1_", useLocalStorage, program1);
-        this.ch2 = new CardHandlerUnit("CH2 (Whale)", "ch2_", useLocalStorage, program2);
+        this.ch2 = new CardHandlerUnit("CH2 (Whale/Target Player)", "ch2_", useLocalStorage, program2);
         this.allCh = [this.ch2, this.ch1, this.controlCh];
         this.gameComplete = false;
         // Text representation of all the actions taken by the players at the blackjack table
@@ -43,12 +43,12 @@ class BlackjackGame {
         this.controlCh.right = appendCh2;
         this.ch1.right = appendCh2;
 
-        // Hook up the deal action of each unit
-        this.ch1.deal = function (card) {
+        // Hook up the keep action of each unit
+        this.ch1.keep = function (card) {
             that.dealerCards.push(card);
             that.updateDealtCards();
         };
-        this.ch2.deal = function (card) {
+        this.ch2.keep = function (card) {
             that.playerCards.push(card);
             that.updateDealtCards();
         };
@@ -138,6 +138,12 @@ class BlackjackGame {
         }
         this.resetDealtCards();
         this.programCounter = 0;
+    }
+
+    resetToStockProgram() {
+        for (const ch of this.allCh) {
+            ch.resetToStockProgram();
+        }
     }
     
     resetDealtCards() {
@@ -298,12 +304,12 @@ class BlackjackGame {
 
 class BlackjackGameWithUi extends BlackjackGame {
     constructor() {
-        const ch12defaultProgram = "LOOP:\nREAD\nDEAL\nJMP LOOP";
+        const ch12defaultProgram = "LOOP:\nREAD\nKEEP\nJMP LOOP";
         super(
             true, // Try to load previous program from local state
             "LOOP:\nREAD\nSEND LEFT\nREAD\nSEND RIGHT\nJMP LOOP", // Control Program
             ch12defaultProgram, ch12defaultProgram);
-        this.controlCh.deal = function (card) { alert("Control unit tried to deal card " + card); };
+        this.controlCh.keep = function (card) { alert("Control unit tried to keep card " + card); };
     }
 
     render() {
@@ -363,13 +369,17 @@ class BlackjackGameWithUi extends BlackjackGame {
         const success = super.toggleEdit();
         const editBtn = document.getElementById('edit_button');
         const resetBtn = document.getElementById('reset_button');
+        const resetStockBtn = document.getElementById('reset_stock_button');
+
         if (this.editMode) {
             editBtn.innerHTML = 'To Run Mode';
             resetBtn.disabled = true;
+            resetStockBtn.disabled = false;
             this.disableStepButtons(true);
         } else {
             editBtn.innerHTML = 'To Edit Mode';
             resetBtn.disabled = false;
+            resetStockBtn.disabled = true;
             this.disableStepButtons(false);
         }
         if (!success) {

@@ -34,9 +34,16 @@
             }
         }
 
+        function resetToInitialDeck() {
+            if (confirm("This will overwrite all CH programs.  Continue?")) {
+                game.resetToStockProgram();
+            }
+        }
+
         window.onload = function () { 
             document.getElementById('validate_button').onclick = validateGame;
             document.getElementById('deck_button').onclick = setInitialDeck;
+            document.getElementById('reset_stock_button').onclick = resetToInitialDeck;
             game.render(); 
         };
     </script>
@@ -52,6 +59,7 @@
     <button type="button" id="run_button" disabled>Run</button>
     <button type="button" id="validate_button" disabled>Validate</button>
     <button type="button" id="deck_button" disabled>Set Initial Deck</button>
+    <button type="button" id="reset_stock_button">Reset to Stock Program</button>
     <table>
         <tr>
             <td>
