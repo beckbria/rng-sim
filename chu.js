@@ -128,6 +128,10 @@ class CardHandlerUnit {
             value.id = this.prefix + reg.id;
             valueBox.appendChild(value);
             row.appendChild(valueBox);
+            // Hack for beta, figure out how to properly remove this later
+            if (reg.name == "SUIT") {
+                row.style.visibility = 'collapse';
+            }
             regs.appendChild(row);
         }
         regs.style.visibility = 'collapse';

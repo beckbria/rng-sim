@@ -15,7 +15,7 @@ CH1
 ///////////////////////////////////////////////////
 LOOP:
 READ
-DEAL
+KEEP
 JMP LOOP
 
 ///////////////////////////////////////////////////
@@ -28,7 +28,7 @@ JE R0 0 GOOD
 SEND LEFT
 JMP LOOP
 GOOD:
-DEAL
+KEEP
 JMP LOOP
 
 *****************************************************
@@ -43,7 +43,7 @@ LOOP:
 # the right unit for 
 # initial processing
 RRAND
-SEND RIGHT
+    SEND RIGHT
 JMP LOOP
 
 ///////////////////////////////////////////////////
@@ -70,13 +70,13 @@ JE R0 0 RECYCLE
 # than 18, deal the 
 # card
 SUB R4 18 R0
-JLT R0 0 KEEP
+JLT R0 0 PRESERVE
 
 # If score is 
 # greater than 21, 
 # deal
 SUB R4 22 R0
-JGE R0 0 KEEP
+JGE R0 0 PRESERVE
 
 # Otherwise, send 
 # the card back to 
@@ -90,8 +90,8 @@ SUB R4 CVALB R4
 SEND RIGHT
 JMP LOOP
 
-KEEP:
-DEAL
+PRESERVE:
+KEEP
 JMP LOOP
 
 
@@ -112,7 +112,7 @@ JGE R0 0 PASS
 # ensures we always 
 # get 18, 19, or 20
 SUB CVALB 9 R0
-JGE R0 0 KEEP
+JGE R0 0 PRESERVE
 
 # Otherwise pass 
 # all cards to the 
@@ -121,8 +121,8 @@ PASS:
 SEND LEFT
 JMP LOOP
 
-KEEP:
+PRESERVE:
 # Track our score
 ADD R4 CVALB R4
-DEAL
+KEEP
 JMP LOOP
