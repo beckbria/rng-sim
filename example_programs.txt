@@ -126,3 +126,65 @@ PRESERVE:
 ADD R4 CVALB R4
 KEEP
 JMP LOOP
+
+****************************************
+Example program that splits even and odd cards between players
+****************************************
+
+////////////////////////////////////////
+Control: 
+////////////////////////////////////////
+LOOP:
+READ
+SEND LEFT
+READ
+SEND RIGHT
+JMP LOOP
+
+////////////////////////////////////////
+CH1:
+////////////////////////////////////////
+LOOP:
+READ
+# Store the card value
+ADD CVAL 0 R0
+
+# Determine if the card is even or odd
+MOD:
+JLT R0 2 GOTMOD
+SUB R0 2 R0
+JMP MOD
+
+GOTMOD:
+# Keep the card if it's even
+JE R0 0 PRESERVE
+SEND RIGHT
+JMP LOOP
+
+PRESERVE:
+KEEP
+JMP LOOP
+
+////////////////////////////////////////
+CH2:
+////////////////////////////////////////
+LOOP:
+READ
+# Store the card value
+ADD CVAL 0 R0
+
+# Determine if the card is even or odd
+MOD:
+JLT R0 2 GOTMOD
+SUB R0 2 R0
+JMP MOD
+
+GOTMOD:
+# Keep the card if it's odd
+JE R0 1 PRESERVE
+SEND LEFT
+JMP LOOP
+
+PRESERVE:
+KEEP
+JMP LOOP
