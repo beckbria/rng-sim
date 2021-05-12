@@ -2,7 +2,6 @@ import { BlackjackGameWithUi } from "./blackjack.js";
 import { Validate } from './validator.js';
 
 var game = new BlackjackGameWithUi();
-alert('Bar');
 function validateGame() {
     document.getElementById('validation_state').value = '';
     const outcome = Validate(game.chuState());
