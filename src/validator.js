@@ -90,7 +90,7 @@ function Validate(programs) {
 
     // TODO: If validation succeeds, call a REST API to validate the code and fetch the puzzle answer.
     // WARNING: Puzzle answer below.  Don't spoil yourself.  For that matter why are you reading the
-    // source code?  Stop that.  This will be moved server-side before the real event.
+    // source code?  Stop that.  This would be moved server-side if this puzzle actually shipped.
     return createSuccess(atob('R0lCU09O'))
 }
 
